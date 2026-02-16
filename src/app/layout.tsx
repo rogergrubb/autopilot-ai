@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DoAnything AI",
-  description: "Autonomous AI agents that work for you",
+  title: "DoAnything | Autonomous AI Agents",
+  description: "AI agents that autonomously run your social media strategy and grow your following",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" className="dark">
-      <body className="bg-zinc-950 text-white min-h-screen antialiased font-sans">
+      <body className="bg-[#0d0d14] text-white antialiased font-sans">
         {children}
       </body>
     </html>
