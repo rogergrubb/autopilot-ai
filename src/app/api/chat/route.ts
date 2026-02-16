@@ -1,8 +1,9 @@
-import { streamText, tool } from 'ai';
+import { streamText, tool, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { primaryModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
 
-export const maxDuration = 60;
+// Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const { messages, agentRole = 'social_strategist' } = await req.json();
@@ -15,6 +16,8 @@ export async function POST(req: Request) {
     model: primaryModel,
     system: systemPrompt,
     messages,
+    // Allow up to 8 tool-call roundtrips before stopping
+    stopWhen: stepCountIs(8),
     tools: {
       createSocialPost: tool({
         description: 'Create a social media post for one of the platforms being promoted.',

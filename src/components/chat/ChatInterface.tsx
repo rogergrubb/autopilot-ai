@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
 import {
@@ -15,6 +15,9 @@ import {
   Check,
   ArrowDown,
   Wand2,
+  Clock,
+  Zap,
+  RotateCcw,
 } from 'lucide-react';
 
 const SUGGESTED_PROMPTS = [
@@ -40,6 +43,11 @@ const SUGGESTED_PROMPTS = [
   },
 ];
 
+// Auto-continue: if Vercel function times out, re-send to pick up.
+// Vercel hobby = 60s. We trigger at 55s to beat the hard cutoff.
+const TIMEOUT_MS = 55_000;
+const MAX_CONTINUES = 3;
+
 export function ChatInterface() {
   const { activeAgent } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,6 +56,15 @@ export function ChatInterface() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // Progress tracking
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [stepCount, setStepCount] = useState(0);
+  const [continueCount, setContinueCount] = useState(0);
+  const [autoContinuing, setAutoContinuing] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
     body: {
@@ -55,13 +72,103 @@ export function ChatInterface() {
     },
   }), [activeAgent?.role]);
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, stop } = useChat({
     transport,
+    onFinish: () => {
+      stopTimer();
+      setAutoContinuing(false);
+    },
+    onError: () => {
+      stopTimer();
+      setAutoContinuing(false);
+    },
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
 
-  // Auto-scroll
+  // Count step-start parts in the latest assistant message for live step counter
+  useEffect(() => {
+    if (!isLoading) return;
+    const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant');
+    if (!lastAssistant?.parts) return;
+    const steps = lastAssistant.parts.filter(p => p.type === 'step-start').length;
+    setStepCount(steps);
+  }, [messages, isLoading]);
+
+  // Timer controls
+  const startTimer = useCallback(() => {
+    startTimeRef.current = Date.now();
+    setElapsedMs(0);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      if (startTimeRef.current) {
+        setElapsedMs(Date.now() - startTimeRef.current);
+      }
+    }, 100);
+  }, []);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    startTimeRef.current = null;
+  }, []);
+
+  // Start/stop timer with loading state; set up auto-continue watchdog
+  useEffect(() => {
+    if (!isLoading) {
+      stopTimer();
+      return;
+    }
+    if (!startTimeRef.current) {
+      startTimer();
+    }
+
+    // Auto-continue watchdog
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (continueCount < MAX_CONTINUES && isLoading) {
+        setAutoContinuing(true);
+        stop();
+        setTimeout(() => {
+          sendMessage({ text: 'Continue from where you left off. Do not repeat anything already said.' });
+          setContinueCount(prev => prev + 1);
+          startTimer();
+        }, 500);
+      }
+    }, TIMEOUT_MS);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, continueCount]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopTimer();
+    };
+  }, [stopTimer]);
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isLoading) return;
+    setContinueCount(0);
+    setStepCount(0);
+    setAutoContinuing(false);
+    sendMessage({ text: input });
+    setInput('');
+    startTimer();
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+  };
+
+  // Auto-scroll on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -85,17 +192,6 @@ export function ChatInterface() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!input.trim() || isLoading) return;
-    sendMessage({ text: input });
-    setInput('');
-    // Reset textarea height
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -106,6 +202,14 @@ export function ChatInterface() {
   const useSuggestion = (prompt: string) => {
     setInput(prompt);
     inputRef.current?.focus();
+  };
+
+  const formatElapsed = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remaining = seconds % 60;
+    return `${minutes}m ${remaining}s`;
   };
 
   return (
@@ -129,7 +233,29 @@ export function ChatInterface() {
             </>
           )}
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Live progress indicators */}
+        <div className="flex items-center gap-3">
+          {isLoading && (
+            <>
+              <span className="flex items-center gap-1.5 text-[10px] text-blue-400/80 bg-blue-500/10 px-2.5 py-1 rounded-full">
+                <Clock className="w-3 h-3" />
+                {formatElapsed(elapsedMs)}
+              </span>
+              {stepCount > 0 && (
+                <span className="flex items-center gap-1.5 text-[10px] text-purple-400/80 bg-purple-500/10 px-2.5 py-1 rounded-full">
+                  <Zap className="w-3 h-3" />
+                  Step {stepCount}
+                </span>
+              )}
+              {autoContinuing && (
+                <span className="flex items-center gap-1.5 text-[10px] text-amber-400/80 bg-amber-500/10 px-2.5 py-1 rounded-full animate-pulse">
+                  <RotateCcw className="w-3 h-3" />
+                  Auto-continuing ({continueCount}/{MAX_CONTINUES})
+                </span>
+              )}
+            </>
+          )}
           <span className="text-[10px] text-white/20 bg-white/5 px-2 py-1 rounded">
             Gemini 2.5 Pro
           </span>
@@ -174,104 +300,125 @@ export function ChatInterface() {
           </div>
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  'flex gap-3',
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                )}
-              >
-                {message.role !== 'user' && (
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/20 flex items-center justify-center shrink-0 mt-1">
-                    <Bot className="w-4 h-4 text-blue-400" />
-                  </div>
-                )}
+            {messages.map((message) => {
+              // Hide auto-continue "Continue from where you left off" messages
+              const isAutoContinueMsg = message.role === 'user' &&
+                message.parts?.some(p => p.type === 'text' && 'text' in p && (p as { text: string }).text.startsWith('Continue from where you left off'));
+              if (isAutoContinueMsg) return null;
 
+              return (
                 <div
+                  key={message.id}
                   className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
-                    message.role === 'user'
-                      ? 'bg-blue-600/20 border border-blue-500/20 text-white'
-                      : 'bg-white/[0.03] border border-white/[0.06] text-white/85'
+                    'flex gap-3',
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
-                  {message.parts?.map((part, i) => {
-                    if (part.type === 'text') {
-                      return (
-                        <div key={i} className="whitespace-pre-wrap">
-                          {part.text}
-                        </div>
-                      );
-                    }
-                    if (part.type?.startsWith('tool-')) {
-                      const toolPart = part as { type: string; toolCallId: string; toolName?: string; state: string; input?: unknown; output?: unknown };
-                      return (
-                        <div key={i} className="my-2 p-3 rounded-lg bg-white/[0.03] border border-white/10">
-                          <div className="flex items-center gap-2 text-[10px] text-white/40 mb-2">
-                            <Sparkles className="w-3 h-3" />
-                            <span className="uppercase tracking-wider">{toolPart.toolName || toolPart.type}</span>
-                            {toolPart.state === 'result' || toolPart.output ? (
-                              <span className="text-green-400">✓ Complete</span>
-                            ) : (
-                              <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
-                            )}
-                          </div>
-                          {'output' in toolPart && toolPart.output !== undefined && (
-                            <pre className="text-[11px] text-white/50 overflow-x-auto whitespace-pre-wrap">
-                              {JSON.stringify(toolPart.output, null, 2).slice(0, 500)}
-                            </pre>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
-
-                  {/* Fallback for simple content */}
-                  {(!message.parts || message.parts.length === 0) && (
-                    <div className="whitespace-pre-wrap">...</div>
+                  {message.role !== 'user' && (
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/20 flex items-center justify-center shrink-0 mt-1">
+                      <Bot className="w-4 h-4 text-blue-400" />
+                    </div>
                   )}
 
-                  {message.role !== 'user' && (
-                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/5">
-                      <button
-                        onClick={() => {
-                          const text = message.parts
-                            ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-                            .map(p => p.text)
-                            .join('\n') || '';
-                          copyMessage(message.id, text);
-                        }}
-                        className="text-white/20 hover:text-white/60 transition-colors"
-                      >
-                        {copiedId === message.id ? (
-                          <Check className="w-3.5 h-3.5 text-green-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
+                  <div
+                    className={cn(
+                      'max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                      message.role === 'user'
+                        ? 'bg-blue-600/20 border border-blue-500/20 text-white'
+                        : 'bg-white/[0.03] border border-white/[0.06] text-white/85'
+                    )}
+                  >
+                    {message.parts?.map((part, i) => {
+                      if (part.type === 'text') {
+                        return (
+                          <div key={i} className="whitespace-pre-wrap">
+                            {(part as { text: string }).text}
+                          </div>
+                        );
+                      }
+                      if (part.type === 'step-start') {
+                        return (
+                          <div key={i} className="flex items-center gap-2 my-2 py-1 border-t border-white/5 text-[10px] text-white/30">
+                            <Zap className="w-3 h-3 text-purple-400/60" />
+                            <span>Next step</span>
+                          </div>
+                        );
+                      }
+                      if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
+                        const toolPart = part as unknown as { type: string; toolCallId: string; toolName?: string; state: string; input?: unknown; output?: unknown };
+                        return (
+                          <div key={i} className="my-2 p-3 rounded-lg bg-white/[0.03] border border-white/10">
+                            <div className="flex items-center gap-2 text-[10px] text-white/40 mb-2">
+                              <Sparkles className="w-3 h-3" />
+                              <span className="uppercase tracking-wider">{toolPart.toolName || toolPart.type}</span>
+                              {toolPart.state === 'result' || toolPart.output ? (
+                                <span className="text-green-400">✓ Complete</span>
+                              ) : (
+                                <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
+                              )}
+                            </div>
+                            {toolPart.output !== undefined && (
+                              <pre className="text-[11px] text-white/50 overflow-x-auto whitespace-pre-wrap">
+                                {JSON.stringify(toolPart.output, null, 2).slice(0, 500)}
+                              </pre>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+
+                    {(!message.parts || message.parts.length === 0) && (
+                      <div className="whitespace-pre-wrap">...</div>
+                    )}
+
+                    {message.role !== 'user' && (
+                      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/5">
+                        <button
+                          onClick={() => {
+                            const text = message.parts
+                              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                              .map(p => p.text)
+                              .join('\n') || '';
+                            copyMessage(message.id, text);
+                          }}
+                          className="text-white/20 hover:text-white/60 transition-colors"
+                        >
+                          {copiedId === message.id ? (
+                            <Check className="w-3.5 h-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {message.role === 'user' && (
+                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-1">
+                      <User className="w-4 h-4 text-white/60" />
                     </div>
                   )}
                 </div>
+              );
+            })}
 
-                {message.role === 'user' && (
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-1">
-                    <User className="w-4 h-4 text-white/60" />
-                  </div>
-                )}
-              </div>
-            ))}
-
+            {/* Loading indicator with timer */}
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex gap-3">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/20 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-blue-400" />
                 </div>
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    <span className="text-sm text-white/40">Thinking...</span>
+                    <span className="text-sm text-white/40">
+                      {autoContinuing ? 'Continuing...' : 'Thinking...'}
+                    </span>
+                    <span className="text-[10px] text-white/20 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatElapsed(elapsedMs)}
+                    </span>
                   </div>
                 </div>
               </div>
