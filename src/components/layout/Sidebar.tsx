@@ -2,40 +2,44 @@
 
 import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { Bot, ChevronLeft, ChevronRight, FolderOpen, Plus, Sparkles, Target, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Target, FolderOpen, Leaf } from 'lucide-react';
 
 const productColors: Record<string, string> = {
-  papervault: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  sellfast: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  braincandy: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  papervault: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  sellfast: 'bg-orange-50 text-orange-700 border-orange-200',
+  braincandy: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, agents, activeAgent, setActiveAgent, projects } = useAppStore();
+  const { sidebarOpen, toggleSidebar, agents, activeAgent, setActiveAgent } = useAppStore();
 
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-white/10 bg-[#0a0a0f] transition-all duration-300',
+        'flex flex-col border-r transition-all duration-300',
         sidebarOpen ? 'w-72' : 'w-16'
       )}
+      style={{ 
+        backgroundColor: 'var(--sidebar-bg)', 
+        borderColor: 'var(--sidebar-border)' 
+      }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
+      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--sidebar-border)' }}>
         {sidebarOpen && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#2d8a4e] flex items-center justify-center">
+              <Leaf className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white">DoAnything</h1>
-              <p className="text-[10px] text-white/40">by NumberOneSon</p>
+              <h1 className="text-sm font-bold text-[#1a1a1a]">DoAnything</h1>
+              <p className="text-[10px] text-[#8a8478]">by NumberOneSon</p>
             </div>
           </div>
         )}
         <button
           onClick={toggleSidebar}
-          className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/80 transition-colors"
+          className="p-1.5 rounded-lg hover:bg-black/5 text-[#8a8478] hover:text-[#1a1a1a] transition-colors"
         >
           {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </button>
@@ -43,7 +47,7 @@ export function Sidebar() {
 
       {/* New Chat */}
       <div className="p-3">
-        <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/20 hover:border-blue-500/40 text-white/80 hover:text-white transition-all text-sm">
+        <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#2d8a4e] hover:bg-[#247a42] text-white transition-all text-sm font-medium shadow-sm">
           <Plus className="w-4 h-4" />
           {sidebarOpen && <span>New Project</span>}
         </button>
@@ -53,7 +57,7 @@ export function Sidebar() {
         <>
           {/* Agents */}
           <div className="px-3 mt-2">
-            <p className="text-[10px] uppercase tracking-wider text-white/30 px-2 mb-2">Agents</p>
+            <p className="text-[10px] uppercase tracking-wider text-[#b5ae9e] px-2 mb-2 font-medium">Agents</p>
             <div className="space-y-1">
               {agents.map((agent) => (
                 <button
@@ -62,19 +66,19 @@ export function Sidebar() {
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
                     activeAgent?.id === agent.id
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                      ? 'bg-white text-[#1a1a1a] shadow-sm border border-[#e5e0d8]'
+                      : 'text-[#8a8478] hover:bg-white/60 hover:text-[#1a1a1a]'
                   )}
                 >
                   <span className="text-lg">{agent.avatar}</span>
                   <div className="text-left">
                     <p className="font-medium">{agent.name}</p>
-                    <p className="text-[10px] text-white/30 capitalize">{agent.role.replace('_', ' ')}</p>
+                    <p className="text-[10px] text-[#b5ae9e] capitalize">{agent.role.replace('_', ' ')}</p>
                   </div>
                   <div
                     className={cn(
                       'ml-auto w-2 h-2 rounded-full',
-                      agent.status === 'working' ? 'bg-green-400 animate-pulse' : 'bg-white/20'
+                      agent.status === 'working' ? 'bg-[#2d8a4e] animate-pulse' : 'bg-[#d4cec2]'
                     )}
                   />
                 </button>
@@ -84,7 +88,7 @@ export function Sidebar() {
 
           {/* Products */}
           <div className="px-3 mt-6">
-            <p className="text-[10px] uppercase tracking-wider text-white/30 px-2 mb-2">Promoting</p>
+            <p className="text-[10px] uppercase tracking-wider text-[#b5ae9e] px-2 mb-2 font-medium">Promoting</p>
             <div className="space-y-1">
               {[
                 { name: 'PaperVault.One', slug: 'papervault', icon: '📄' },
@@ -94,12 +98,12 @@ export function Sidebar() {
                 <div
                   key={product.slug}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs',
+                    'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium',
                     productColors[product.slug]
                   )}
                 >
                   <span>{product.icon}</span>
-                  <span className="font-medium">{product.name}</span>
+                  <span>{product.name}</span>
                 </div>
               ))}
             </div>
@@ -107,7 +111,7 @@ export function Sidebar() {
 
           {/* Quick Actions */}
           <div className="px-3 mt-6">
-            <p className="text-[10px] uppercase tracking-wider text-white/30 px-2 mb-2">Quick Actions</p>
+            <p className="text-[10px] uppercase tracking-wider text-[#b5ae9e] px-2 mb-2 font-medium">Quick Actions</p>
             <div className="space-y-1">
               {[
                 { label: 'Create Content Calendar', icon: <Target className="w-3.5 h-3.5" /> },
@@ -116,7 +120,7 @@ export function Sidebar() {
               ].map((action) => (
                 <button
                   key={action.label}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-all text-xs"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[#8a8478] hover:text-[#1a1a1a] hover:bg-white/60 transition-all text-xs"
                 >
                   {action.icon}
                   <span>{action.label}</span>
@@ -128,10 +132,10 @@ export function Sidebar() {
       )}
 
       {/* Bottom */}
-      <div className="mt-auto p-3 border-t border-white/10">
+      <div className="mt-auto p-3 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
         {sidebarOpen && (
-          <div className="flex items-center gap-2 px-2 text-white/30 text-[10px]">
-            <Bot className="w-3 h-3" />
+          <div className="flex items-center gap-2 px-2 text-[#b5ae9e] text-[10px]">
+            <Leaf className="w-3 h-3" />
             <span>Powered by Gemini 2.5 Pro</span>
           </div>
         )}

@@ -8,7 +8,7 @@ import { useAppStore } from '@/lib/store';
 import {
   Send,
   Sparkles,
-  Bot,
+  Leaf,
   User,
   Loader2,
   Copy,
@@ -43,8 +43,6 @@ const SUGGESTED_PROMPTS = [
   },
 ];
 
-// Auto-continue: if Vercel function times out, re-send to pick up.
-// Vercel hobby = 60s. We trigger at 55s to beat the hard cutoff.
 const TIMEOUT_MS = 55_000;
 const MAX_CONTINUES = 3;
 
@@ -56,7 +54,6 @@ export function ChatInterface() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Progress tracking
   const [elapsedMs, setElapsedMs] = useState(0);
   const [stepCount, setStepCount] = useState(0);
   const [continueCount, setContinueCount] = useState(0);
@@ -86,7 +83,6 @@ export function ChatInterface() {
 
   const isLoading = status === 'streaming' || status === 'submitted';
 
-  // Count step-start parts in the latest assistant message for live step counter
   useEffect(() => {
     if (!isLoading) return;
     const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant');
@@ -95,41 +91,24 @@ export function ChatInterface() {
     setStepCount(steps);
   }, [messages, isLoading]);
 
-  // Timer controls
   const startTimer = useCallback(() => {
     startTimeRef.current = Date.now();
     setElapsedMs(0);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      if (startTimeRef.current) {
-        setElapsedMs(Date.now() - startTimeRef.current);
-      }
+      if (startTimeRef.current) setElapsedMs(Date.now() - startTimeRef.current);
     }, 100);
   }, []);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     startTimeRef.current = null;
   }, []);
 
-  // Start/stop timer with loading state; set up auto-continue watchdog
   useEffect(() => {
-    if (!isLoading) {
-      stopTimer();
-      return;
-    }
-    if (!startTimeRef.current) {
-      startTimer();
-    }
-
-    // Auto-continue watchdog
+    if (!isLoading) { stopTimer(); return; }
+    if (!startTimeRef.current) startTimer();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       if (continueCount < MAX_CONTINUES && isLoading) {
@@ -142,19 +121,11 @@ export function ChatInterface() {
         }, 500);
       }
     }, TIMEOUT_MS);
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, continueCount]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopTimer();
-    };
-  }, [stopTimer]);
+  useEffect(() => { return () => { stopTimer(); }; }, [stopTimer]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -168,11 +139,8 @@ export function ChatInterface() {
     if (inputRef.current) inputRef.current.style.height = 'auto';
   };
 
-  // Auto-scroll on new messages
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
   const handleScroll = () => {
@@ -193,10 +161,7 @@ export function ChatInterface() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   };
 
   const useSuggestion = (prompt: string) => {
@@ -207,25 +172,23 @@ export function ChatInterface() {
   const formatElapsed = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
     if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remaining = seconds % 60;
-    return `${minutes}m ${remaining}s`;
+    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d14]">
+    <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-[#0a0a0f]/80 backdrop-blur-sm">
+      <header className="flex items-center justify-between px-6 py-3 border-b bg-white/80 backdrop-blur-sm" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-3">
           {activeAgent && (
             <>
               <span className="text-2xl">{activeAgent.avatar}</span>
               <div>
-                <h2 className="text-sm font-semibold text-white">{activeAgent.name}</h2>
-                <p className="text-[10px] text-white/40 capitalize flex items-center gap-1">
+                <h2 className="text-sm font-semibold text-[#1a1a1a]">{activeAgent.name}</h2>
+                <p className="text-[10px] text-[#8a8478] capitalize flex items-center gap-1">
                   <span className={cn(
                     'w-1.5 h-1.5 rounded-full inline-block',
-                    isLoading ? 'bg-green-400 animate-pulse' : 'bg-white/20'
+                    isLoading ? 'bg-[#2d8a4e] animate-pulse' : 'bg-[#d4cec2]'
                   )} />
                   {isLoading ? 'Working...' : activeAgent.role.replace('_', ' ')}
                 </p>
@@ -234,29 +197,28 @@ export function ChatInterface() {
           )}
         </div>
 
-        {/* Live progress indicators */}
         <div className="flex items-center gap-3">
           {isLoading && (
             <>
-              <span className="flex items-center gap-1.5 text-[10px] text-blue-400/80 bg-blue-500/10 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1.5 text-[10px] text-[#2d8a4e] bg-[#e8f5ec] px-2.5 py-1 rounded-full font-medium">
                 <Clock className="w-3 h-3" />
                 {formatElapsed(elapsedMs)}
               </span>
               {stepCount > 0 && (
-                <span className="flex items-center gap-1.5 text-[10px] text-purple-400/80 bg-purple-500/10 px-2.5 py-1 rounded-full">
+                <span className="flex items-center gap-1.5 text-[10px] text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full font-medium">
                   <Zap className="w-3 h-3" />
                   Step {stepCount}
                 </span>
               )}
               {autoContinuing && (
-                <span className="flex items-center gap-1.5 text-[10px] text-amber-400/80 bg-amber-500/10 px-2.5 py-1 rounded-full animate-pulse">
+                <span className="flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full animate-pulse font-medium">
                   <RotateCcw className="w-3 h-3" />
                   Auto-continuing ({continueCount}/{MAX_CONTINUES})
                 </span>
               )}
             </>
           )}
-          <span className="text-[10px] text-white/20 bg-white/5 px-2 py-1 rounded">
+          <span className="text-[10px] text-[#b5ae9e] bg-[#f0ece4] px-2 py-1 rounded font-medium">
             Gemini 2.5 Pro
           </span>
         </div>
@@ -270,12 +232,12 @@ export function ChatInterface() {
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/20 flex items-center justify-center mb-6">
-              <Wand2 className="w-8 h-8 text-blue-400" />
+            <div className="w-16 h-16 rounded-2xl bg-[#e8f5ec] border border-[#c8e6c9] flex items-center justify-center mb-6">
+              <Wand2 className="w-8 h-8 text-[#2d8a4e]" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">What should we work on?</h2>
-            <p className="text-white/40 text-sm mb-8 text-center max-w-md">
-              I&apos;m your autonomous social media strategist. I can create content, plan campaigns, and grow your following for PaperVault, SellFast, and BrainCandy.
+            <h2 className="text-xl font-bold text-[#1a1a1a] mb-2">What should we work on?</h2>
+            <p className="text-[#8a8478] text-sm mb-8 text-center max-w-md">
+              I&apos;m your autonomous AI agent. I can research, browse the web, create content, generate images, and connect to 3000+ apps.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
@@ -283,14 +245,15 @@ export function ChatInterface() {
                 <button
                   key={i}
                   onClick={() => useSuggestion(suggestion.prompt)}
-                  className="flex items-start gap-3 p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition-all text-left group"
+                  className="flex items-start gap-3 p-4 rounded-xl border bg-white hover:bg-[#f5f2ed] hover:border-[#d4cec2] transition-all text-left group shadow-sm"
+                  style={{ borderColor: 'var(--border)' }}
                 >
                   <span className="text-lg mt-0.5">{suggestion.icon}</span>
                   <div>
-                    <p className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+                    <p className="text-sm font-medium text-[#1a1a1a] group-hover:text-[#2d8a4e] transition-colors">
                       {suggestion.title}
                     </p>
-                    <p className="text-[11px] text-white/30 mt-1 line-clamp-2">
+                    <p className="text-[11px] text-[#b5ae9e] mt-1 line-clamp-2">
                       {suggestion.prompt.slice(0, 80)}...
                     </p>
                   </div>
@@ -301,7 +264,6 @@ export function ChatInterface() {
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((message) => {
-              // Hide auto-continue "Continue from where you left off" messages
               const isAutoContinueMsg = message.role === 'user' &&
                 message.parts?.some(p => p.type === 'text' && 'text' in p && (p as { text: string }).text.startsWith('Continue from where you left off'));
               if (isAutoContinueMsg) return null;
@@ -310,13 +272,13 @@ export function ChatInterface() {
                 <div
                   key={message.id}
                   className={cn(
-                    'flex gap-3',
+                    'flex gap-3 animate-fade-in',
                     message.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
                   {message.role !== 'user' && (
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/20 flex items-center justify-center shrink-0 mt-1">
-                      <Bot className="w-4 h-4 text-blue-400" />
+                    <div className="w-8 h-8 rounded-lg bg-[#e8f5ec] border border-[#c8e6c9] flex items-center justify-center shrink-0 mt-1">
+                      <Leaf className="w-4 h-4 text-[#2d8a4e]" />
                     </div>
                   )}
 
@@ -324,22 +286,23 @@ export function ChatInterface() {
                     className={cn(
                       'max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
                       message.role === 'user'
-                        ? 'bg-blue-600/20 border border-blue-500/20 text-white'
-                        : 'bg-white/[0.03] border border-white/[0.06] text-white/85'
+                        ? 'bg-[#2d8a4e] text-white shadow-sm'
+                        : 'bg-white border shadow-sm text-[#1a1a1a]'
                     )}
+                    style={message.role !== 'user' ? { borderColor: 'var(--border)' } : undefined}
                   >
                     {message.parts?.map((part, i) => {
                       if (part.type === 'text') {
                         return (
-                          <div key={i} className="whitespace-pre-wrap">
+                          <div key={i} className="whitespace-pre-wrap prose-agent">
                             {(part as { text: string }).text}
                           </div>
                         );
                       }
                       if (part.type === 'step-start') {
                         return (
-                          <div key={i} className="flex items-center gap-2 my-2 py-1 border-t border-white/5 text-[10px] text-white/30">
-                            <Zap className="w-3 h-3 text-purple-400/60" />
+                          <div key={i} className="flex items-center gap-2 my-2 py-1 border-t text-[10px] text-[#b5ae9e]" style={{ borderColor: 'var(--border)' }}>
+                            <Zap className="w-3 h-3 text-purple-400" />
                             <span>Next step</span>
                           </div>
                         );
@@ -347,18 +310,18 @@ export function ChatInterface() {
                       if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
                         const toolPart = part as unknown as { type: string; toolCallId: string; toolName?: string; state: string; input?: unknown; output?: unknown };
                         return (
-                          <div key={i} className="my-2 p-3 rounded-lg bg-white/[0.03] border border-white/10">
-                            <div className="flex items-center gap-2 text-[10px] text-white/40 mb-2">
+                          <div key={i} className="my-2 p-3 rounded-lg border" style={{ backgroundColor: 'var(--surface-hover)', borderColor: 'var(--border)' }}>
+                            <div className="flex items-center gap-2 text-[10px] text-[#8a8478] mb-2">
                               <Sparkles className="w-3 h-3" />
-                              <span className="uppercase tracking-wider">{toolPart.toolName || toolPart.type}</span>
+                              <span className="uppercase tracking-wider font-medium">{toolPart.toolName || toolPart.type}</span>
                               {toolPart.state === 'result' || toolPart.output ? (
-                                <span className="text-green-400">✓ Complete</span>
+                                <span className="text-[#2d8a4e] font-medium">✓ Complete</span>
                               ) : (
-                                <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
+                                <Loader2 className="w-3 h-3 animate-spin text-[#2d8a4e]" />
                               )}
                             </div>
                             {toolPart.output !== undefined && (
-                              <pre className="text-[11px] text-white/50 overflow-x-auto whitespace-pre-wrap">
+                              <pre className="text-[11px] text-[#8a8478] overflow-x-auto whitespace-pre-wrap">
                                 {JSON.stringify(toolPart.output, null, 2).slice(0, 500)}
                               </pre>
                             )}
@@ -373,7 +336,7 @@ export function ChatInterface() {
                     )}
 
                     {message.role !== 'user' && (
-                      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/5">
+                      <div className="flex items-center gap-2 mt-3 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                         <button
                           onClick={() => {
                             const text = message.parts
@@ -382,10 +345,10 @@ export function ChatInterface() {
                               .join('\n') || '';
                             copyMessage(message.id, text);
                           }}
-                          className="text-white/20 hover:text-white/60 transition-colors"
+                          className="text-[#d4cec2] hover:text-[#8a8478] transition-colors"
                         >
                           {copiedId === message.id ? (
-                            <Check className="w-3.5 h-3.5 text-green-400" />
+                            <Check className="w-3.5 h-3.5 text-[#2d8a4e]" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}
@@ -395,27 +358,26 @@ export function ChatInterface() {
                   </div>
 
                   {message.role === 'user' && (
-                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-1">
-                      <User className="w-4 h-4 text-white/60" />
+                    <div className="w-8 h-8 rounded-lg bg-[#f0ece4] border border-[#e5e0d8] flex items-center justify-center shrink-0 mt-1">
+                      <User className="w-4 h-4 text-[#8a8478]" />
                     </div>
                   )}
                 </div>
               );
             })}
 
-            {/* Loading indicator with timer */}
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/20 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-blue-400" />
+              <div className="flex gap-3 animate-fade-in">
+                <div className="w-8 h-8 rounded-lg bg-[#e8f5ec] border border-[#c8e6c9] flex items-center justify-center">
+                  <Leaf className="w-4 h-4 text-[#2d8a4e]" />
                 </div>
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl px-4 py-3">
+                <div className="bg-white border rounded-2xl px-4 py-3 shadow-sm" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-3">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    <span className="text-sm text-white/40">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#2d8a4e]" />
+                    <span className="text-sm text-[#8a8478]">
                       {autoContinuing ? 'Continuing...' : 'Thinking...'}
                     </span>
-                    <span className="text-[10px] text-white/20 flex items-center gap-1">
+                    <span className="text-[10px] text-[#b5ae9e] flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {formatElapsed(elapsedMs)}
                     </span>
@@ -431,7 +393,8 @@ export function ChatInterface() {
       {showScrollButton && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-32 right-8 p-2 rounded-full bg-white/10 border border-white/20 text-white/60 hover:bg-white/20 transition-all"
+          className="absolute bottom-32 right-8 p-2 rounded-full bg-white border shadow-md text-[#8a8478] hover:text-[#1a1a1a] transition-all"
+          style={{ borderColor: 'var(--border)' }}
         >
           <ArrowDown className="w-4 h-4" />
         </button>
@@ -440,7 +403,7 @@ export function ChatInterface() {
       {/* Input Area */}
       <div className="px-4 pb-4 pt-2">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto relative">
-          <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] focus-within:border-blue-500/30 transition-colors p-2">
+          <div className="flex items-end gap-2 rounded-2xl border bg-white focus-within:border-[#2d8a4e]/40 focus-within:shadow-md transition-all p-2 shadow-sm" style={{ borderColor: 'var(--border)' }}>
             <textarea
               ref={inputRef}
               value={input}
@@ -448,7 +411,7 @@ export function ChatInterface() {
               onKeyDown={handleKeyDown}
               placeholder="Tell your agent what to do..."
               rows={1}
-              className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 resize-none focus:outline-none px-2 py-1.5 max-h-32 min-h-[36px]"
+              className="flex-1 bg-transparent text-[#1a1a1a] text-sm placeholder:text-[#b5ae9e] resize-none focus:outline-none px-2 py-1.5 max-h-32 min-h-[36px]"
               style={{ height: 'auto', overflow: 'hidden' }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
@@ -462,8 +425,8 @@ export function ChatInterface() {
               className={cn(
                 'p-2 rounded-lg transition-all',
                 input.trim()
-                  ? 'bg-blue-600 text-white hover:bg-blue-500'
-                  : 'text-white/20'
+                  ? 'bg-[#2d8a4e] text-white hover:bg-[#247a42] shadow-sm'
+                  : 'text-[#d4cec2]'
               )}
             >
               {isLoading ? (
@@ -473,8 +436,8 @@ export function ChatInterface() {
               )}
             </button>
           </div>
-          <p className="text-center text-[10px] text-white/20 mt-2">
-            Nova uses Gemini 2.5 Pro · Pipedream MCP for 3000+ app integrations
+          <p className="text-center text-[10px] text-[#b5ae9e] mt-2">
+            Powered by Gemini 2.5 Pro · Deep Research · Web Browser · 3000+ App Integrations
           </p>
         </form>
       </div>
