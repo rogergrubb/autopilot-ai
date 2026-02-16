@@ -23,7 +23,7 @@
 - Deploy: ✅ Production READY
 - Git webhook: ✅ Working (was disconnected, now fixed)
 - MCP: ✅ Wired (Pipedream SDK + @modelcontextprotocol/sdk installed, env vars set)
-- DB: ❌ No DATABASE_URL, schema not migrated
+- DB: ✅ Neon PostgreSQL connected, 8 tables migrated (users, agents, projects, tasks, messages, tool_results, agent_memory, app_connections)
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions

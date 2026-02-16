@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { primaryModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
 import { MCPSessionManager } from '@/lib/mcp-session';
 import { deepResearch } from '@/lib/tools/deep-research';
+import { browseWeb, extractFromPage } from '@/lib/tools/web-browser';
+import { generateImage } from '@/lib/tools/image-gen';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -136,6 +138,44 @@ function getLocalTools(): ToolSet {
         }),
         execute: async ({ query, context }) => {
           return await deepResearch(query, context);
+        },
+      }),
+
+      browseWeb: tool({
+        description: 'Browse a web page and extract information. Acts as a lightweight web browser — can visit URLs, read page content, and follow instructions about what to look for. Use for: reading articles, checking website content, monitoring pages, gathering specific data from URLs.',
+        inputSchema: z.object({
+          url: z.string().describe('The URL to visit and read'),
+          instructions: z.string().describe('What to look for or extract from the page'),
+        }),
+        execute: async ({ url, instructions }) => {
+          return await browseWeb(url, instructions);
+        },
+      }),
+
+      extractData: tool({
+        description: 'Extract structured data from a web page. Visits a URL and pulls out specific fields into a JSON object. Use for: scraping product info, extracting contact details, pulling pricing data, reading tables.',
+        inputSchema: z.object({
+          url: z.string().describe('The URL to extract data from'),
+          dataSchema: z.string().describe('Description of the data fields to extract, e.g. "product name, price, rating, number of reviews"'),
+        }),
+        execute: async ({ url, dataSchema }) => {
+          return await extractFromPage(url, dataSchema);
+        },
+      }),
+    } : {}),
+
+    // Image Generation — requires OPENAI_API_KEY
+    ...(process.env.OPENAI_API_KEY ? {
+      generateImage: tool({
+        description: 'Generate an image from a text description using DALL-E 3. Creates high-quality images for social media posts, marketing materials, illustrations, concepts, and any visual content. Returns an image URL.',
+        inputSchema: z.object({
+          prompt: z.string().describe('Detailed description of the image to generate'),
+          size: z.enum(['1024x1024', '1792x1024', '1024x1792']).optional().describe('Image dimensions: square (1024x1024), landscape (1792x1024), or portrait (1024x1792)'),
+          quality: z.enum(['standard', 'hd']).optional().describe('Image quality: standard (~$0.04) or hd (~$0.08)'),
+          style: z.enum(['vivid', 'natural']).optional().describe('Style: vivid (dramatic/hyper-real) or natural (more realistic)'),
+        }),
+        execute: async ({ prompt, size, quality, style }) => {
+          return await generateImage(prompt, { size, quality, style });
         },
       }),
     } : {}),
