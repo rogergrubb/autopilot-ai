@@ -66,14 +66,16 @@
 ## 10. Next Actions
 1. ~~Deploy staged code (timer, auto-continue)~~ ✅ DONE
 2. ~~Wire Pipedream MCP~~ ✅ DONE
-3. Add Deep Research tool (Tavily or Exa API)
-4. Connect PostgreSQL + run migrations
-5. Add Browser tool (Playwright headless)
-6. Add Code sandbox (Claude Code integration)
-7. Add Image generation (DALL-E)
-8. Match original UI design (warm cream/green palette)
-9. Project management UI + Knowledge Bases + Skills sidebar
-10. Phone calls (Twilio + ElevenLabs)
+3. ~~Add Deep Research tool~~ ✅ DONE (Claude Haiku + web search)
+4. ~~Connect PostgreSQL~~ ✅ DONE (Neon, 8 tables migrated)
+5. ~~Add Browser tool~~ ✅ DONE (Claude Haiku + web search)
+6. ~~Add Image generation~~ ✅ DONE (DALL-E 3, needs OPENAI_API_KEY)
+7. ~~Match original UI design~~ ✅ DONE (warm cream/green palette)
+8. Add Code sandbox (Claude Code or E2B integration)
+9. Wire chat persistence to database (save/load conversations)
+10. Project management UI + Knowledge Bases + Skills sidebar
+11. Phone calls (Twilio + ElevenLabs)
+12. Self-reflection reasoning loop (not just auto-continue)
 
 ## Credentials Secured
 - GOOGLE_GENERATIVE_AI_API_KEY: Set on Vercel ✅
