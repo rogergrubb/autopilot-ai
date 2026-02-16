@@ -1,98 +1,93 @@
-# Agent Memory – DoAnythingClone (MultiPowerAI DoAnything)
+# Agent Memory – DoAnything Clone
 
 ## 1. Project Overview
-- **What**: Full clone of doanything.com - autonomous AI agent platform where agents work on complex projects for weeks/months
-- **Brand**: MultiPowerAI / NumberOneSonSoftware
-- **Original Built By**: Garrett Scott, CEO of Pipedream Labs
-- **Original Framework**: MEESEEKS
-- **Original Open Source Ref**: PipedreamHQ/mcp-chat (Next.js + AI SDK + Pipedream MCP)
-- **Non-goals**: Not replicating Pipedream infrastructure, building equivalent autonomous functionality
+- Full-stack clone of doanything.com — autonomous AI agent platform
+- Primary user: Roger Grubb (NumberOneSonSoftware)
+- Stack: Next.js 16.1.6, React 19, AI SDK v6 (ai@6.0.86), Gemini 2.5 Pro, Drizzle ORM, Zustand
+- Repo: github.com/rogergrubb/doanything-clone
+- Live: doanything-clone.vercel.app
+- Non-goals: Exact pixel replica; focus on functional parity of agent capabilities
 
-## 2. Definition of Done
-### Functional
-- [ ] Agent identity (own name + email)
-- [ ] 10+ tools: Email, Phone, Browser, Research, Code, Docs, Websites, Images, Subagents, Slides
-- [ ] Multi-AI (Claude, Gemini, GPT) via Vercel AI SDK
-- [ ] 3000+ app connections via Pipedream MCP
-- [ ] Self-reflection loop (60s timeout → autonomous retry)
-- [ ] SMS notifications via Twilio
-- [ ] Smart pacing (pause/resume)
-- [ ] Project-level task management
-- [ ] Org Chart view
-- [ ] Chat UI matching DoAnything design
-
-### Test Scenarios
-1. Write and publish a book (outline → Amazon)
-2. Start and run a business (idea → revenue)
-3. Build newsletter to 2,000 subscribers
+## 2. Definition of Done (DoD)
+- 10 core tools: Email, Phone, Browser, Research, Code (Claude Code), Files, Websites, Images, Subagents, Slides
+- 3000+ app connections via Pipedream MCP
+- Self-reflection loop (not just auto-continue)
+- Works for days/months (durable execution)
+- Agent has own identity (name + email)
+- SMS notifications to user
+- UI matches original warm cream/green aesthetic
+- Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- **Build**: PHASE 1 COMPLETE - Deployed to Vercel
-- **URL**: https://doanything-clone.vercel.app
-- **GitHub**: https://github.com/rogergrubb/doanything-clone
-- **Vercel Project ID**: prj_N0Lkb3kdPWv249sCj1jdN0gBAjwy
-- **Team ID**: team_h4aVKRrQ17g4dZCH1XgVsMR5
-- **Build Status**: ✅ Compiles clean, deployed to production
-- **Blockers**: None
+- Build: ✅ Passing on Vercel (commit bcc3c55)
+- Deploy: ✅ Production READY
+- Git webhook: ✅ Working (was disconnected, now fixed)
+- MCP: ✅ Wired (Pipedream SDK + @modelcontextprotocol/sdk installed, env vars set)
+- DB: ❌ No DATABASE_URL, schema not migrated
+- Auth: ⚠️ Demo credentials only
 
-### Credentials Secured
-- Pipedream Client ID: [REDACTED]
-- Pipedream Client Secret: [REDACTED]
-- Pipedream Project ID: proj_ELs40WX
-- Gemini 2.5 Pro Key: [REDACTED]
-- GitHub Token: [REDACTED]
-- Vercel Token: [REDACTED]
+## 4. Architecture & Design Decisions
+- AI SDK v6 with `useChat({ transport })` + `DefaultChatTransport` pattern
+- Pipedream remote MCP at `https://remote.mcp.pipedream.net` (not self-hosted)
+- MCPSessionManager creates per-request MCP connections, converts tools to AI SDK ToolSet
+- Local tools (social media) always available; MCP tools merge in when Pipedream configured
+- `stopWhen: stepCountIs(8)` for multi-step agent loops
+- Client-side auto-continue at 55s (Vercel hobby 60s cap workaround)
+- Zod v4 used (not v3) — avoid `.describe()` on enum values
 
-## 4. Architecture
-### Stack
-- Next.js 15 + React 19 + TypeScript + Tailwind + Vercel AI SDK
-- PostgreSQL + Drizzle ORM on Railway
-- Auth.js (NextAuth v5)
-- Pipedream MCP (remote.mcp.pipedream.net) for 3000+ apps
-- Gemini 2.5 Pro (primary), GPT-4o (secondary), Claude (tertiary)
-- Twilio (SMS/voice), E2B (code sandbox), Playwright (browser), DALL-E (images)
-
-### Agent Loop (MEESEEKS-equivalent)
-User goal → Task tree → For each: Reason → Act → Observe → Reflect → Repeat
-
-## 5. Known Landmines
-- Anthropic API limited until March 1, 2026
-- Roger = GUI only, no CLI
-- Pipedream free tier has limits
-- Long-running agents need durable execution on Railway
+## 5. Known Issues & Landmines
+- Vercel hobby tier caps functions at 60s; auto-continue is workaround, not fix
+- pnpm lockfile must stay in sync — project uses pnpm, npm installs break Vercel build
+- AI SDK v6 `tool()` with `jsonSchema()` has strict typing; use raw objects for MCP tools
+- `inputSchema` not `parameters` for tool definitions in AI SDK v6 with zod
+- `@pipedream/sdk` PipedreamClient requires env vars (PIPEDREAM_CLIENT_ID, CLIENT_SECRET, PROJECT_ID), won't init without them
 
 ## 6. Debug History
-- AI SDK v6 uses both `parameters` and `inputSchema` for tools (both work)
-- `DefaultChatTransport` is in `ai` package, not `@ai-sdk/react`
-- `toUIMessageStreamResponse()` is the correct response method for streaming chat
-- DATABASE_URL must be optional for Vercel builds without DB
+- pnpm lockfile out of sync → Vercel build error `ERR_PNPM_OUTDATED_LOCKFILE` → Fix: `npx pnpm install` to regenerate lockfile
+- Git webhook disconnected → Vercel not auto-deploying → Fix: User reconnected in Vercel Settings → Git
+- tool() + jsonSchema() type error in v6 → Fix: Use raw `{ description, parameters, execute }` objects cast as ToolSet
 
 ## 7. Proven Patterns
-- Next.js 16 + AI SDK 6 + Tailwind CSS 4 all work together
-- `pnpm` as package manager matches PipedreamHQ reference
-- Zustand for client state is clean and lightweight
-- Make DB connection lazy/optional for build-time safety
-- Vercel CLI deploy with `--prod --token --yes` flags works from CI
+- Always use `npx pnpm install` (not npm) for adding dependencies
+- Push to GitHub triggers Vercel auto-deploy (webhook working as of bcc3c55)
+- GitHub PAT for push: stored in Claude session (not committed)
+- Verify with `npx tsc --noEmit` then `npx next build` before pushing
 
-## 8. Failed Approaches
-- Env vars using `process.env.DATABASE_URL!` crashes build without DB
-- Two competing store files (chat-store vs lib/store) causes confusion - consolidated to lib/store
+## 8. Failed Approaches (Do Not Retry)
+- Using `npm install` for deps → breaks pnpm lockfile on Vercel
+- Using `tool()` helper with `jsonSchema()` for MCP tools → type errors in v6
+- Direct Pipedream API token fetch from this container → network restricted
 
-## 9. Open Questions - DEFERRED TO LATER PHASES
-1. Twilio: Account SID, Auth Token, Phone # (Phase 4)
-2. OpenAI: API key (Phase 3 - images/code)
-3. E2B: API key (Phase 3 - code sandbox)
-4. ElevenLabs: API key (Phase 4 - voice)
-5. Tavily: API key (Phase 3 - research)
-6. Agent email domain (Phase 4)
-7. Custom domain for deployment
+## 9. Open Questions / Unknowns
+- Does Pipedream MCP actually return tools on first chat request? (needs live test)
+- What does Pipedream OAuth flow look like for end-user app connections?
+- How to handle Pipedream account linking UI for users?
 
 ## 10. Next Actions
-1. ✅ Deep dive research complete
-2. ✅ Agent.md updated
-3. ✅ Pipedream credentials secured
-4. ✅ Phase 1 DEPLOYED: https://doanything-clone.vercel.app
-5. → Test chat functionality (send message, verify Gemini responds)
-6. → Phase 2: Agent engine + task tree + ReAct loop + Railway background workers
-7. → Phase 3: Tool system + Pipedream MCP integration
-8. → Phase 4: Communications + subagents
+1. ~~Deploy staged code (timer, auto-continue)~~ ✅ DONE
+2. ~~Wire Pipedream MCP~~ ✅ DONE
+3. Add Deep Research tool (Tavily or Exa API)
+4. Connect PostgreSQL + run migrations
+5. Add Browser tool (Playwright headless)
+6. Add Code sandbox (Claude Code integration)
+7. Add Image generation (DALL-E)
+8. Match original UI design (warm cream/green palette)
+9. Project management UI + Knowledge Bases + Skills sidebar
+10. Phone calls (Twilio + ElevenLabs)
+
+## Credentials Secured
+- GOOGLE_GENERATIVE_AI_API_KEY: Set on Vercel ✅
+- PIPEDREAM_CLIENT_ID: Set on Vercel ✅
+- PIPEDREAM_CLIENT_SECRET: Set on Vercel ✅
+- PIPEDREAM_PROJECT_ID: proj_ELs40WX ✅
+- PIPEDREAM_PROJECT_ENVIRONMENT: development ✅
+- GitHub PAT: stored in Claude session (not committed)
+
+## Credentials Still Needed
+- DATABASE_URL (PostgreSQL — Railway or Neon)
+- NEXTAUTH_SECRET
+- OpenAI API key (for DALL-E image generation)
+- Twilio SID + Token + Phone number
+- E2B or Claude Code API key
+- Tavily or Exa API key (for Deep Research)
+- ElevenLabs API key (for voice calls)

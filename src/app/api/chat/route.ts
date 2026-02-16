@@ -2,6 +2,7 @@ import { streamText, tool, stepCountIs, type ToolSet } from 'ai';
 import { z } from 'zod';
 import { primaryModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
 import { MCPSessionManager } from '@/lib/mcp-session';
+import { deepResearch } from '@/lib/tools/deep-research';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -123,6 +124,21 @@ function getLocalTools(): ToolSet {
         return { hashtags: hashtagSets[product] || [], topic, platform };
       },
     }),
+
+    // Deep Research — delegates to Claude Haiku with web search
+    // Only available when ANTHROPIC_API_KEY is set
+    ...(process.env.ANTHROPIC_API_KEY ? {
+      deepResearch: tool({
+        description: 'Perform thorough web research on any topic. Uses an AI sub-agent with web search to find current information, cross-reference sources, and produce a comprehensive research report. Use this for: market research, competitor analysis, fact-checking, trend analysis, technical research, news gathering, and any task requiring up-to-date web information.',
+        inputSchema: z.object({
+          query: z.string().describe('The research question or topic to investigate thoroughly'),
+          context: z.string().optional().describe('Additional context to guide the research focus'),
+        }),
+        execute: async ({ query, context }) => {
+          return await deepResearch(query, context);
+        },
+      }),
+    } : {}),
   };
 }
 
