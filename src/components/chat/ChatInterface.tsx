@@ -129,7 +129,7 @@ export function ChatInterface() {
     api: '/api/chat',
     body: {
       agentRole: activeAgent?.role || 'social_strategist',
-      model: selectedModel || 'gemini-2.5-pro',
+      model: selectedModel || 'gemini-2.0-flash',
     },
   }), [activeAgent?.role, selectedModel]);
 
@@ -292,7 +292,7 @@ export function ChatInterface() {
             </>
           )}
           <span className="hidden sm:inline text-[10px] text-[#b5ae9e] bg-[#f0ece4] px-2 py-1 rounded font-medium">
-            Gemini 2.5 Pro
+            Gemini 2.0 Flash
           </span>
         </div>
       </header>
@@ -667,8 +667,8 @@ export function ChatInterface() {
             </button>
           </div>
           <p className="text-center text-[10px] text-[#b5ae9e] mt-2">
-            <span className="hidden sm:inline">Powered by Gemini 2.5 Pro · Deep Research · Web Browser · 3000+ App Integrations</span>
-            <span className="sm:hidden">Gemini 2.5 Pro · 3000+ Apps</span>
+            <span className="hidden sm:inline">Powered by Gemini 2.0 Flash · Deep Research · Web Browser · 3000+ App Integrations</span>
+            <span className="sm:hidden">Gemini 2.0 Flash · 3000+ Apps</span>
           </p>
         </form>
       </div>

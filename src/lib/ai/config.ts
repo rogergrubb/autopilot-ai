@@ -1,18 +1,20 @@
 import { google } from '@ai-sdk/google';
 
-// Primary model - Gemini 2.5 Pro (until Anthropic API resets March 1)
-export const primaryModel = google('gemini-2.5-pro');
+// Primary model - Gemini 2.0 Flash (fast, free tier compatible)
+export const primaryModel = google('gemini-2.0-flash');
 
 // Fast model for simple tasks
-export const fastModel = google('gemini-2.5-flash');
+export const fastModel = google('gemini-2.0-flash-lite');
 
 // Get model by name
 export function getModel(name: string) {
   switch (name) {
     case 'gemini-2.5-pro':
-      return google('gemini-2.5-pro');
+      return google('gemini-2.5-pro-preview-05-06');
     case 'gemini-2.5-flash':
-      return google('gemini-2.5-flash');
+      return google('gemini-2.5-flash-preview-05-20');
+    case 'gemini-2.0-flash':
+      return google('gemini-2.0-flash');
     default:
       return primaryModel;
   }
