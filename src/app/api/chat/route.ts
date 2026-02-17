@@ -10,6 +10,7 @@ import { selfReflect, planNextSteps } from '@/lib/tools/reasoning';
 import { searchKnowledge } from '@/lib/tools/knowledge-search';
 import { sendNotification } from '@/lib/tools/notifications';
 import { makePhoneCall } from '@/lib/tools/phone-call';
+import { createAutonomousTask, checkTaskStatus } from '@/lib/tools/autonomous-task';
 import { db } from '@/db';
 import { userMemories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -141,6 +142,8 @@ function getLocalTools(): ToolSet {
     searchKnowledge,
     sendNotification,
     makePhoneCall,
+    createAutonomousTask,
+    checkTaskStatus,
 
     // Deep Research — delegates to Claude Haiku with web search
     // Only available when ANTHROPIC_API_KEY is set

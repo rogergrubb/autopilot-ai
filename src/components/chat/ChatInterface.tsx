@@ -386,7 +386,9 @@ export function ChatInterface() {
                         const isPlan = toolPart.toolName === 'planNextSteps';
                         const isNotification = toolPart.toolName === 'sendNotification';
                         const isPhoneCall = toolPart.toolName === 'makePhoneCall';
-                        const isSpecial = isReflection || isPlan || isNotification || isPhoneCall;
+                        const isTaskLaunch = toolPart.toolName === 'createAutonomousTask';
+                        const isTaskCheck = toolPart.toolName === 'checkTaskStatus';
+                        const isSpecial = isReflection || isPlan || isNotification || isPhoneCall || isTaskLaunch || isTaskCheck;
 
                         // Special rendering for reasoning and notification tools
                         if (isSpecial && toolPart.output) {
@@ -427,6 +429,60 @@ export function ChatInterface() {
                                     : String(output.error || 'Call failed')
                                   }
                                 </p>
+                              </div>
+                            );
+                          }
+
+                          if (isTaskLaunch) {
+                            return (
+                              <div key={i} className="my-2 p-3 rounded-lg border-l-4 border-l-indigo-400 border border-indigo-100" style={{ backgroundColor: '#eef2ff' }}>
+                                <div className="flex items-center gap-2 text-[10px] text-indigo-700 font-medium">
+                                  <span>🚀</span>
+                                  <span className="uppercase tracking-wider">Autonomous Task</span>
+                                  {output.launched ? (
+                                    <span className="text-indigo-600 ml-auto">✓ Launched</span>
+                                  ) : (
+                                    <span className="text-red-500 ml-auto">✗ Failed</span>
+                                  )}
+                                </div>
+                                {output.launched ? (
+                                  <div className="mt-1">
+                                    <p className="text-[11px] font-medium text-indigo-900">{String(output.title || '')}</p>
+                                    <p className="text-[10px] text-indigo-600 mt-0.5">Working autonomously in background — you&apos;ll get a notification when done.</p>
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-red-600 mt-1">{String(output.error || 'Launch failed')}</p>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          if (isTaskCheck) {
+                            return (
+                              <div key={i} className="my-2 p-3 rounded-lg border-l-4 border-l-indigo-400 border border-indigo-100" style={{ backgroundColor: '#eef2ff' }}>
+                                <div className="flex items-center gap-2 text-[10px] text-indigo-700 font-medium">
+                                  <span>📋</span>
+                                  <span className="uppercase tracking-wider">Task Status</span>
+                                  <span className="ml-auto text-[11px]">{String(output.status || 'unknown')}</span>
+                                </div>
+                                {output.found ? (
+                                  <div className="mt-1 text-[11px] text-indigo-800">
+                                    <p className="font-medium">{String(output.title || '')}</p>
+                                    <p className="text-[10px] text-indigo-600">{String(output.progress || '')}</p>
+                                    {Array.isArray(output.steps) && (
+                                      <div className="mt-1.5 space-y-0.5">
+                                        {(output.steps as Array<{ step: number; title: string; status: string }>).map((s, si) => (
+                                          <div key={si} className="flex items-center gap-1.5 text-[10px]">
+                                            <span>{s.status === 'completed' ? '✅' : s.status === 'running' ? '⏳' : s.status === 'failed' ? '❌' : '⬜'}</span>
+                                            <span className={s.status === 'completed' ? 'text-indigo-800' : 'text-indigo-400'}>{s.title}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-red-600 mt-1">{String(output.error || 'Task not found')}</p>
+                                )}
                               </div>
                             );
                           }

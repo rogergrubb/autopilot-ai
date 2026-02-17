@@ -236,6 +236,46 @@ export const calls = pgTable("calls", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// === Autonomous Tasks (background multi-step execution) ===
+export const autonomousTasks = pgTable("autonomous_tasks", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id").references(() => users.id),
+  title: text("title").notNull(),
+  goal: text("goal").notNull(),
+  status: text("status").notNull().default("pending"), // pending, planning, running, paused, waiting, completed, failed, cancelled
+  context: jsonb("context").$type<Record<string, unknown>>().notNull().default({}),
+  plan: jsonb("plan").$type<Array<{ title: string; instruction: string; toolName?: string }>>().default([]),
+  currentStepIndex: integer("current_step_index").default(0),
+  maxSteps: integer("max_steps").default(20),
+  retryCount: integer("retry_count").default(0),
+  chatId: text("chat_id"),
+  projectId: text("project_id"),
+  pauseReason: text("pause_reason"),
+  resumeAfter: timestamp("resume_after"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === Task Steps (individual steps in autonomous execution) ===
+export const taskSteps = pgTable("task_steps", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id").notNull().references(() => autonomousTasks.id, { onDelete: 'cascade' }),
+  stepIndex: integer("step_index").notNull(),
+  title: text("title").notNull(),
+  instruction: text("instruction").notNull(),
+  toolName: text("tool_name"),
+  toolInput: jsonb("tool_input").$type<Record<string, unknown>>(),
+  toolOutput: jsonb("tool_output").$type<Record<string, unknown>>(),
+  status: text("status").notNull().default("pending"), // pending, running, completed, failed, skipped
+  error: text("error"),
+  retryCount: integer("retry_count").default(0),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // === Type exports ===
 export type Chat = typeof chats.$inferSelect;
 export type KnowledgeBase = typeof knowledgeBases.$inferSelect;
@@ -243,6 +283,8 @@ export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type UserMemory = typeof userMemories.$inferSelect;
 export type Call = typeof calls.$inferSelect;
+export type AutonomousTask = typeof autonomousTasks.$inferSelect;
+export type TaskStep = typeof taskSteps.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type Project = typeof projects.$inferSelect;
