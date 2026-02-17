@@ -19,7 +19,7 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit 07cb024)
+- Build: ✅ Passing on Vercel (commit 44fb28d)
 - Deploy: ✅ Production READY — auto-deploying via webhook
 - Git webhook: ✅ Working
 - MCP: ✅ Wired (Pipedream SDK)
@@ -32,6 +32,7 @@
 - Reasoning: ✅ selfReflect + planNextSteps tools
 - Knowledge Bases: ✅ File upload, URL import, text notes, searchKnowledge tool
 - Notifications: ✅ Agent inbox with bell icon, sendNotification tool
+- Settings: ✅ Panel with profile, model prefs, integrations dashboard, danger zone
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -116,8 +117,15 @@
     - Red unread badge, color-coded types, mark-all-read, clear-all
     - 30s polling for new notifications
     - Amber notification cards in chat UI
-16. Phone calls (Twilio + ElevenLabs) — BLOCKED: needs API keys
-17. Settings panel (API key management, preferences)
+16. ~~Settings panel~~ ✅ DONE
+    - GET/PUT /api/settings (profile + env var status)
+    - Profile section: edit name/email
+    - Model Preferences: switch Gemini Pro/Flash
+    - Integrations dashboard: 11 env vars, green/amber status
+    - Danger zone: clear chats/notifications/projects with confirm
+    - Integration health ring (% configured)
+    - Never exposes actual key values
+17. Phone calls (Twilio + ElevenLabs) — BLOCKED: needs API keys
 18. Mobile responsive layout
 19. Auth improvements (real user accounts)
 
