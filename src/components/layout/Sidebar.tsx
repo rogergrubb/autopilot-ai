@@ -7,8 +7,10 @@ import {
   ChevronLeft, ChevronRight, Plus, MessageSquare, Trash2, Leaf,
   FolderOpen, BookOpen, Zap, Settings, ChevronDown, Globe, Code,
   Search, Image, Monitor, Calendar, Users, Hash, BarChart3,
-  Brain, Upload, FileText, Link2, X, ChevronUp,
+  Brain, Upload, FileText, Link2, X, ChevronUp, Bell,
 } from 'lucide-react';
+
+import { NotificationInbox } from './NotificationInbox';
 
 const AVAILABLE_MODELS = [
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', speed: 'Smart' },
@@ -26,6 +28,7 @@ const AGENT_SKILLS = [
   { name: 'Image Generation', icon: Image, desc: 'Create images with DALL-E 3', active: true },
   { name: 'Code Sandbox', icon: Code, desc: 'Run Python/JS in cloud VM', active: true },
   { name: '3000+ Apps', icon: Zap, desc: 'Gmail, Slack, Notion, Stripe...', active: true },
+  { name: 'Notifications', icon: Bell, desc: 'Send alerts to your inbox', active: true },
 ];
 
 export function Sidebar() {
@@ -227,9 +230,12 @@ export function Sidebar() {
             </div>
           </div>
         )}
-        <button onClick={toggleSidebar} className="p-1.5 rounded-lg hover:bg-black/5 text-[#8a8478] hover:text-[#1a1a1a] transition-colors">
-          {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-1">
+          {sidebarOpen && <NotificationInbox />}
+          <button onClick={toggleSidebar} className="p-1.5 rounded-lg hover:bg-black/5 text-[#8a8478] hover:text-[#1a1a1a] transition-colors">
+            {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* New Chat */}
@@ -645,7 +651,7 @@ export function Sidebar() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2 text-[#b5ae9e] text-[10px]">
               <Leaf className="w-3 h-3" />
-              <span>9 tables · 10 skills</span>
+              <span>12 tables · {AGENT_SKILLS.length} skills</span>
             </div>
             <button className="p-1 rounded hover:bg-black/5 text-[#b5ae9e] hover:text-[#1a1a1a] transition-colors">
               <Settings className="w-3.5 h-3.5" />

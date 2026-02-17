@@ -384,11 +384,30 @@ export function ChatInterface() {
                         const toolPart = part as unknown as { type: string; toolCallId: string; toolName?: string; state: string; input?: unknown; output?: unknown };
                         const isReflection = toolPart.toolName === 'selfReflect';
                         const isPlan = toolPart.toolName === 'planNextSteps';
-                        const isReasoning = isReflection || isPlan;
+                        const isNotification = toolPart.toolName === 'sendNotification';
+                        const isSpecial = isReflection || isPlan || isNotification;
 
-                        // Special rendering for reflection/planning tools
-                        if (isReasoning && toolPart.output) {
+                        // Special rendering for reasoning and notification tools
+                        if (isSpecial && toolPart.output) {
                           const output = toolPart.output as Record<string, unknown>;
+
+                          if (isNotification) {
+                            return (
+                              <div key={i} className="my-2 p-3 rounded-lg border-l-4 border-l-amber-400 border border-amber-100" style={{ backgroundColor: '#fffbeb' }}>
+                                <div className="flex items-center gap-2 text-[10px] text-amber-700 font-medium">
+                                  <span>🔔</span>
+                                  <span className="uppercase tracking-wider">Notification Sent</span>
+                                  {output.sent ? (
+                                    <span className="text-green-600 ml-auto">✓</span>
+                                  ) : (
+                                    <span className="text-red-500 ml-auto">✗</span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-amber-800 mt-1">{String(output.message || '')}</p>
+                              </div>
+                            );
+                          }
+
                           if (isReflection) {
                             const reflection = output.reflection as Record<string, unknown> | undefined;
                             return (

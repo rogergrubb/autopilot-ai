@@ -8,6 +8,7 @@ import { generateImage } from '@/lib/tools/image-gen';
 import { executeCode, isCodeSandboxAvailable } from '@/lib/tools/code-sandbox';
 import { selfReflect, planNextSteps } from '@/lib/tools/reasoning';
 import { searchKnowledge } from '@/lib/tools/knowledge-search';
+import { sendNotification } from '@/lib/tools/notifications';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -134,6 +135,7 @@ function getLocalTools(): ToolSet {
     selfReflect,
     planNextSteps,
     searchKnowledge,
+    sendNotification,
 
     // Deep Research — delegates to Claude Haiku with web search
     // Only available when ANTHROPIC_API_KEY is set

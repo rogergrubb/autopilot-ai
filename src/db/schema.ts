@@ -197,10 +197,25 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// === Notifications (agent inbox) ===
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id").references(() => users.id),
+  title: text("title").notNull(),
+  body: text("body"),
+  type: text("type").notNull().default("info"), // 'info', 'success', 'warning', 'task', 'reminder'
+  source: text("source"), // which tool/agent generated it
+  chatId: text("chat_id"), // optional link to a chat
+  read: boolean("read").default(false).notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // === Type exports ===
 export type Chat = typeof chats.$inferSelect;
 export type KnowledgeBase = typeof knowledgeBases.$inferSelect;
 export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type Project = typeof projects.$inferSelect;
