@@ -48,7 +48,7 @@ const TIMEOUT_MS = 55_000;
 const MAX_CONTINUES = 3;
 
 export function ChatInterface() {
-  const { activeAgent, activeChatId, setActiveChatId, setChatHistory } = useAppStore();
+  const { activeAgent, activeChatId, setActiveChatId, setChatHistory, selectedModel } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
@@ -129,8 +129,9 @@ export function ChatInterface() {
     api: '/api/chat',
     body: {
       agentRole: activeAgent?.role || 'social_strategist',
+      model: selectedModel || 'gemini-2.5-pro',
     },
-  }), [activeAgent?.role]);
+  }), [activeAgent?.role, selectedModel]);
 
   const { messages, sendMessage, status, stop } = useChat({
     transport,

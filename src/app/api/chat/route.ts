@@ -1,6 +1,6 @@
 import { streamText, tool, stepCountIs, type ToolSet } from 'ai';
 import { z } from 'zod';
-import { primaryModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
+import { primaryModel, getModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
 import { MCPSessionManager } from '@/lib/mcp-session';
 import { deepResearch } from '@/lib/tools/deep-research';
 import { browseWeb, extractFromPage, interactWithPage, isBrowserAvailable, hasBrowserCapabilities } from '@/lib/tools/web-browser';
@@ -220,7 +220,7 @@ function getLocalTools(): ToolSet {
 }
 
 export async function POST(req: Request) {
-  const { messages, agentRole = 'social_strategist' } = await req.json();
+  const { messages, agentRole = 'social_strategist', model: modelName } = await req.json();
 
   const systemPrompt = agentRole === 'social_strategist'
     ? SOCIAL_STRATEGIST_PROMPT
@@ -252,8 +252,10 @@ export async function POST(req: Request) {
     console.log('[Chat] Pipedream not configured, using local tools only');
   }
 
+  const selectedModel = modelName ? getModel(modelName) : primaryModel;
+
   const result = streamText({
-    model: primaryModel,
+    model: selectedModel,
     system: systemPrompt,
     messages,
     // Allow up to 8 tool-call roundtrips before stopping
