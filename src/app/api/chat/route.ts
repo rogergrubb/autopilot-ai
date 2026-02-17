@@ -6,6 +6,7 @@ import { deepResearch } from '@/lib/tools/deep-research';
 import { browseWeb, extractFromPage, interactWithPage, isBrowserAvailable, hasBrowserCapabilities } from '@/lib/tools/web-browser';
 import { generateImage } from '@/lib/tools/image-gen';
 import { executeCode, isCodeSandboxAvailable } from '@/lib/tools/code-sandbox';
+import { selfReflect, planNextSteps } from '@/lib/tools/reasoning';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -127,6 +128,10 @@ function getLocalTools(): ToolSet {
         return { hashtags: hashtagSets[product] || [], topic, platform };
       },
     }),
+
+    // Reasoning & self-reflection tools (always available)
+    selfReflect,
+    planNextSteps,
 
     // Deep Research — delegates to Claude Haiku with web search
     // Only available when ANTHROPIC_API_KEY is set

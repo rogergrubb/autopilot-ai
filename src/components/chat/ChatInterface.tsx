@@ -188,7 +188,7 @@ export function ChatInterface() {
         setAutoContinuing(true);
         stop();
         setTimeout(() => {
-          sendMessage({ text: 'Continue from where you left off. Do not repeat anything already said.' });
+          sendMessage({ text: 'You were interrupted by a timeout. Before continuing, use selfReflect to evaluate your progress so far — what have you completed, what gaps remain, and what should you do next. Then continue executing.' });
           setContinueCount(prev => prev + 1);
           startTimer();
         }, 500);
@@ -382,6 +382,65 @@ export function ChatInterface() {
                       }
                       if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
                         const toolPart = part as unknown as { type: string; toolCallId: string; toolName?: string; state: string; input?: unknown; output?: unknown };
+                        const isReflection = toolPart.toolName === 'selfReflect';
+                        const isPlan = toolPart.toolName === 'planNextSteps';
+                        const isReasoning = isReflection || isPlan;
+
+                        // Special rendering for reflection/planning tools
+                        if (isReasoning && toolPart.output) {
+                          const output = toolPart.output as Record<string, unknown>;
+                          if (isReflection) {
+                            const reflection = output.reflection as Record<string, unknown> | undefined;
+                            return (
+                              <div key={i} className="my-2 p-3 rounded-lg border-l-4 border-l-purple-400 border border-purple-100" style={{ backgroundColor: '#faf5ff' }}>
+                                <div className="flex items-center gap-2 text-[10px] text-purple-600 mb-2 font-medium">
+                                  <RotateCcw className="w-3 h-3" />
+                                  <span className="uppercase tracking-wider">Self-Reflection</span>
+                                  {reflection?.confidence !== undefined && (
+                                    <span className="ml-auto text-[11px] font-bold">{String(reflection.confidence)}% confident</span>
+                                  )}
+                                </div>
+                                {reflection && (
+                                  <div className="text-[11px] text-purple-800 space-y-1">
+                                    <p><strong>Quality:</strong> {String(reflection.quality)}</p>
+                                    <p><strong>Steps done:</strong> {String(reflection.stepsCompleted)}</p>
+                                    {Array.isArray(reflection.gaps) && reflection.gaps.length > 0 && (
+                                      <p><strong>Gaps:</strong> {reflection.gaps.join(', ')}</p>
+                                    )}
+                                    <p><strong>Next:</strong> {String(reflection.nextAction)}</p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          if (isPlan) {
+                            const plan = output.plan as Record<string, unknown> | undefined;
+                            const steps = plan?.steps as Array<Record<string, unknown>> | undefined;
+                            return (
+                              <div key={i} className="my-2 p-3 rounded-lg border-l-4 border-l-blue-400 border border-blue-100" style={{ backgroundColor: '#f0f7ff' }}>
+                                <div className="flex items-center gap-2 text-[10px] text-blue-600 mb-2 font-medium">
+                                  <Clock className="w-3 h-3" />
+                                  <span className="uppercase tracking-wider">Execution Plan</span>
+                                  {plan?.complexity != null && (
+                                    <span className="ml-auto px-1.5 py-0.5 rounded-full bg-blue-100 text-[9px]">{String(plan.complexity)}</span>
+                                  )}
+                                </div>
+                                {steps && (
+                                  <div className="text-[11px] text-blue-800 space-y-0.5">
+                                    {steps.map((step, si) => (
+                                      <div key={si} className="flex items-start gap-1.5">
+                                        <span className="text-blue-400 font-mono flex-shrink-0">{String(step.order)}.</span>
+                                        <span>{String(step.action)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        }
+
+                        // Default tool rendering
                         return (
                           <div key={i} className="my-2 p-3 rounded-lg border" style={{ backgroundColor: 'var(--surface-hover)', borderColor: 'var(--border)' }}>
                             <div className="flex items-center gap-2 text-[10px] text-[#8a8478] mb-2">
