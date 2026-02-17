@@ -19,7 +19,7 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit 8a828bf)
+- Build: ✅ Passing on Vercel (commit 7f53dea)
 - Deploy: ✅ Production READY — auto-deploying via webhook
 - Git webhook: ✅ Working
 - MCP: ✅ Wired (Pipedream SDK)
@@ -28,6 +28,8 @@
 - Chat Persistence: ✅ Auto-save, load, delete, sidebar history
 - Sidebar: ✅ 4-tab design (Chats, Projects, KB, Skills) + model selector
 - Model Selector: ✅ Dynamic Gemini Pro/Flash switching
+- Projects: ✅ Persistent (CRUD API + Neon DB)
+- Reasoning: ✅ selfReflect + planNextSteps tools
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -95,7 +97,7 @@
     - System prompt updated with Self-Reflection Protocol
     - Auto-continue triggers reflection first
     - Purple/blue reflection cards in chat UI
-13. Wire Projects to database (persist across sessions)
+13. ~~Wire Projects to database~~ ✅ DONE (CRUD API + Neon persistence)
 14. Knowledge base file upload (PDF, docs, links)
 15. Agent inbox / notifications
 
