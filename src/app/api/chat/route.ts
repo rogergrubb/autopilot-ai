@@ -5,6 +5,7 @@ import { MCPSessionManager } from '@/lib/mcp-session';
 import { deepResearch } from '@/lib/tools/deep-research';
 import { browseWeb, extractFromPage, interactWithPage, isBrowserAvailable, hasBrowserCapabilities } from '@/lib/tools/web-browser';
 import { generateImage } from '@/lib/tools/image-gen';
+import { executeCode, isCodeSandboxAvailable } from '@/lib/tools/code-sandbox';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -202,6 +203,19 @@ function getLocalTools(): ToolSet {
         },
       }),
     } : {}),
+
+    // ── Code Sandbox (E2B) ────────────────────────────────────────────
+    executeCode: tool({
+      description: 'Execute Python or JavaScript code in a secure cloud sandbox. Use for data analysis, calculations, file generation, web scraping scripts, API calls, chart creation, and any computational task. Can install pip/npm packages. Returns stdout, stderr, and rich results (text, images, HTML, JSON).',
+      inputSchema: z.object({
+        code: z.string().describe('The code to execute'),
+        language: z.enum(['python', 'javascript']).optional().describe('Programming language (default: python)'),
+        packages: z.array(z.string()).optional().describe('Packages to install before execution (e.g. ["pandas", "matplotlib"])'),
+      }),
+      execute: async ({ code, language, packages }) => {
+        return await executeCode(code, language || 'python', packages);
+      },
+    }),
   };
 }
 
