@@ -17,6 +17,14 @@ interface Project {
   progress: number;
 }
 
+interface ChatSummary {
+  id: string;
+  title: string;
+  agentRole: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface AppState {
   // Sidebar
   sidebarOpen: boolean;
@@ -31,6 +39,12 @@ interface AppState {
   activeProject: Project | null;
   setActiveProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
+
+  // Chat persistence
+  activeChatId: string | null;
+  setActiveChatId: (id: string | null) => void;
+  chatHistory: ChatSummary[];
+  setChatHistory: (chats: ChatSummary[]) => void;
 
   // Default agents
   agents: Agent[];
@@ -54,6 +68,11 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveProject: (project) => set({ activeProject: project }),
   addProject: (project) =>
     set((s) => ({ projects: [...s.projects, project] })),
+
+  activeChatId: null,
+  setActiveChatId: (id) => set({ activeChatId: id }),
+  chatHistory: [],
+  setChatHistory: (chats) => set({ chatHistory: chats }),
 
   agents: [
     {

@@ -8,6 +8,13 @@
       "when": 1771285169284,
       "tag": "0000_gigantic_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771294496122,
+      "tag": "0001_green_human_fly",
+      "breakpoints": true
     }
   ]
 }

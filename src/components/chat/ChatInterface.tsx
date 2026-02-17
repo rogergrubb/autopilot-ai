@@ -5,6 +5,7 @@ import { DefaultChatTransport } from 'ai';
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
+import { nanoid } from 'nanoid';
 import {
   Send,
   Sparkles,
@@ -47,12 +48,13 @@ const TIMEOUT_MS = 55_000;
 const MAX_CONTINUES = 3;
 
 export function ChatInterface() {
-  const { activeAgent } = useAppStore();
+  const { activeAgent, activeChatId, setActiveChatId, setChatHistory } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [chatId, setChatId] = useState<string>(() => nanoid(12));
 
   const [elapsedMs, setElapsedMs] = useState(0);
   const [stepCount, setStepCount] = useState(0);
@@ -61,6 +63,67 @@ export function ChatInterface() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveChat = useCallback(async (chatMessages: unknown[]) => {
+    try {
+      // Auto-generate title from first user message
+      const firstUser = chatMessages.find((m: any) => m.role === 'user') as any;
+      const title = firstUser?.content?.slice(0, 60) || 'New Chat';
+
+      await fetch(`/api/chats/${chatId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: chatMessages,
+          title,
+          agentRole: activeAgent?.role || 'social_strategist',
+        }),
+      });
+      // Refresh chat list in sidebar
+      refreshChatList();
+    } catch (e) {
+      console.error('Failed to save chat:', e);
+    }
+  }, [chatId, activeAgent?.role]);
+
+  const refreshChatList = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chats');
+      const data = await res.json();
+      setChatHistory(data.chats || []);
+    } catch {}
+  }, [setChatHistory]);
+
+  // Load chat from sidebar when activeChatId changes
+  useEffect(() => {
+    if (!activeChatId || activeChatId === chatId) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/chats/${activeChatId}`);
+        const data = await res.json();
+        if (data.chat) {
+          setChatId(activeChatId);
+          // Reset state for the loaded chat — messages will be set via setMessages if available
+          // For now, since useChat doesn't expose setMessages in v6, we reload the page
+          // This is a limitation we can improve later with a custom message store
+          window.location.href = `?chat=${activeChatId}`;
+        }
+      } catch (e) {
+        console.error('Failed to load chat:', e);
+      }
+    })();
+  }, [activeChatId]);
+
+  // Load chat from URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlChatId = urlParams.get('chat');
+    if (urlChatId) {
+      setChatId(urlChatId);
+      setActiveChatId(urlChatId);
+    }
+    refreshChatList();
+  }, []);
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
@@ -71,15 +134,24 @@ export function ChatInterface() {
 
   const { messages, sendMessage, status, stop } = useChat({
     transport,
+    id: chatId,
     onFinish: () => {
       stopTimer();
       setAutoContinuing(false);
+      // Auto-save after assistant finishes responding
+      setTimeout(() => {
+        saveChat(messagesRef.current);
+      }, 500);
     },
     onError: () => {
       stopTimer();
       setAutoContinuing(false);
     },
   });
+
+  // Keep a ref to messages for async save
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   const isLoading = status === 'streaming' || status === 'submitted';
 

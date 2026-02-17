@@ -72,8 +72,12 @@
 5. ~~Add Browser tool~~ ✅ DONE (Claude Haiku + web search)
 6. ~~Add Image generation~~ ✅ DONE (DALL-E 3, needs OPENAI_API_KEY)
 7. ~~Match original UI design~~ ✅ DONE (warm cream/green palette)
-8. Add Code sandbox (Claude Code or E2B integration)
-9. Wire chat persistence to database (save/load conversations)
+8. ~~Add Code sandbox~~ ✅ DONE (E2B integration)
+9. ~~Wire chat persistence to database~~ ✅ DONE (chats table + API routes + sidebar + auto-save)
+   - Schema: chats table with JSONB messages column
+   - API: GET/POST /api/chats, GET/PUT/DELETE /api/chats/[id]
+   - Frontend: auto-save on finish, chat history in sidebar, new chat button
+   - PENDING: drizzle-kit push migration to Neon (needs DATABASE_URL)
 10. Project management UI + Knowledge Bases + Skills sidebar
 11. Phone calls (Twilio + ElevenLabs)
 12. Self-reflection reasoning loop (not just auto-continue)

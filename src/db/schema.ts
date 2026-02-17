@@ -163,7 +163,18 @@ export const appConnections = pgTable("app_connections", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// === Chats (conversation persistence) ===
+export const chats = pgTable("chats", {
+  id: text("id").primaryKey(), // nanoid-generated
+  title: text("title").default("New Chat"),
+  messages: jsonb("messages").$type<unknown[]>().default([]),
+  agentRole: text("agent_role").default("social_strategist"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // === Type exports ===
+export type Chat = typeof chats.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type Project = typeof projects.$inferSelect;
