@@ -25,14 +25,27 @@ interface ChatSummary {
   updatedAt: string;
 }
 
+interface KnowledgeBase {
+  id: string;
+  name: string;
+  fileCount: number;
+  createdAt: string;
+}
+
 interface AppState {
   // Sidebar
   sidebarOpen: boolean;
   toggleSidebar: () => void;
+  sidebarTab: 'chats' | 'projects' | 'knowledge' | 'skills';
+  setSidebarTab: (tab: 'chats' | 'projects' | 'knowledge' | 'skills') => void;
 
   // Active agent
   activeAgent: Agent | null;
   setActiveAgent: (agent: Agent | null) => void;
+
+  // Model selector
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
 
   // Projects
   projects: Project[];
@@ -46,6 +59,10 @@ interface AppState {
   chatHistory: ChatSummary[];
   setChatHistory: (chats: ChatSummary[]) => void;
 
+  // Knowledge Bases
+  knowledgeBases: KnowledgeBase[];
+  setKnowledgeBases: (kbs: KnowledgeBase[]) => void;
+
   // Default agents
   agents: Agent[];
 }
@@ -53,6 +70,8 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   sidebarOpen: true,
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  sidebarTab: 'chats',
+  setSidebarTab: (tab) => set({ sidebarTab: tab }),
 
   activeAgent: {
     id: 'default-strategist',
@@ -62,6 +81,9 @@ export const useAppStore = create<AppState>((set) => ({
     avatar: '🚀',
   },
   setActiveAgent: (agent) => set({ activeAgent: agent }),
+
+  selectedModel: 'gemini-2.5-pro',
+  setSelectedModel: (model) => set({ selectedModel: model }),
 
   projects: [],
   activeProject: null,
@@ -73,6 +95,9 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveChatId: (id) => set({ activeChatId: id }),
   chatHistory: [],
   setChatHistory: (chats) => set({ chatHistory: chats }),
+
+  knowledgeBases: [],
+  setKnowledgeBases: (kbs) => set({ knowledgeBases: kbs }),
 
   agents: [
     {
