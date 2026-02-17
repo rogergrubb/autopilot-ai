@@ -19,12 +19,15 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit 7822506)
+- Build: ✅ Passing on Vercel (commit 8a828bf)
 - Deploy: ✅ Production READY — auto-deploying via webhook
 - Git webhook: ✅ Working
 - MCP: ✅ Wired (Pipedream SDK)
-- DB: ✅ Neon PostgreSQL connected, 8 tables migrated
+- DB: ✅ Neon PostgreSQL connected, 9 tables migrated (chats added)
 - Browser: ✅ Browserbase + Playwright live (real cloud browser)
+- Chat Persistence: ✅ Auto-save, load, delete, sidebar history
+- Sidebar: ✅ 4-tab design (Chats, Projects, KB, Skills) + model selector
+- Model Selector: ✅ Dynamic Gemini Pro/Flash switching
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -78,7 +81,13 @@
    - API: GET/POST /api/chats, GET/PUT/DELETE /api/chats/[id]
    - Frontend: auto-save on finish, chat history in sidebar, new chat button
    - PENDING: drizzle-kit push migration to Neon (needs DATABASE_URL)
-10. Project management UI + Knowledge Bases + Skills sidebar
+10. ~~Project management UI + Knowledge Bases + Skills sidebar~~ ✅ DONE
+    - 4-tab sidebar: Chats | Projects | KB | Skills
+    - Model picker: Gemini 2.5 Pro / Flash (wired to API route)
+    - Projects tab: create with goals + progress tracking
+    - Knowledge tab: built-in product knowledge + upload placeholder
+    - Skills tab: 10 agent capabilities listed
+    - Agent switcher (Nova, Pixel, Scout)
 11. Phone calls (Twilio + ElevenLabs)
 12. Self-reflection reasoning loop (not just auto-continue)
 
@@ -91,11 +100,12 @@
 - GitHub PAT: stored in Claude session (not committed)
 - BROWSERBASE_API_KEY: Set on Vercel ✅
 - BROWSERBASE_PROJECT_ID: 5aa68d35-41f8-411c-b832-f1b446661002 ✅
+- E2B_API_KEY: Set on Vercel ✅ (pending user adding to env vars)
+- DATABASE_URL: Neon PostgreSQL ✅
 
 ## Credentials Still Needed
 - NEXTAUTH_SECRET
 - OpenAI API key (for DALL-E image generation)
 - Twilio SID + Token + Phone number
-- E2B or Claude Code API key
 - Tavily or Exa API key (for Deep Research)
 - ElevenLabs API key (for voice calls)
