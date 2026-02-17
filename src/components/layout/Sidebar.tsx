@@ -102,17 +102,12 @@ export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
         if (data.knowledgeBases) setKbList(data.knowledgeBases);
       } catch {}
     })();
-    // Check if user has memories — show import modal on first visit
+    // Load memories count (import available in Settings)
     (async () => {
       try {
         const res = await fetch('/api/memories');
         const data = await res.json();
-        const count = data.memories?.length || 0;
-        setMemoriesCount(count);
-        if (count === 0) {
-          // First visit — show import prompt after a small delay
-          setTimeout(() => setShowImportMemories(true), 1500);
-        }
+        setMemoriesCount(data.memories?.length || 0);
       } catch {}
     })();
   }, [setChatHistory, setProjects, activeAgent?.id]);
