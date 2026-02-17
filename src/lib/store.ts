@@ -87,7 +87,7 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setActiveAgent: (agent) => set({ activeAgent: agent }),
 
-  selectedModel: 'gemini-2.0-flash',
+  selectedModel: 'gemini-2.5-pro',
   setSelectedModel: (model) => set({ selectedModel: model }),
 
   projects: [],

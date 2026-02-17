@@ -1,18 +1,18 @@
 import { google } from '@ai-sdk/google';
 
-// Primary model - Gemini 2.0 Flash (fast, free tier compatible)
-export const primaryModel = google('gemini-2.0-flash');
+// Primary model - Gemini 2.5 Pro (paid tier)
+export const primaryModel = google('gemini-2.5-pro');
 
 // Fast model for simple tasks
-export const fastModel = google('gemini-2.0-flash-lite');
+export const fastModel = google('gemini-2.5-flash');
 
 // Get model by name
 export function getModel(name: string) {
   switch (name) {
     case 'gemini-2.5-pro':
-      return google('gemini-2.5-pro-preview-05-06');
+      return google('gemini-2.5-pro');
     case 'gemini-2.5-flash':
-      return google('gemini-2.5-flash-preview-05-20');
+      return google('gemini-2.5-flash');
     case 'gemini-2.0-flash':
       return google('gemini-2.0-flash');
     default:
