@@ -274,13 +274,22 @@ export async function POST(req: Request) {
       const userId = 'default-user';
       const chatId = `chat-${Date.now()}`;
       mcpSession = new MCPSessionManager(MCP_BASE_URL, userId, chatId);
-      const mcpTools = await mcpSession.tools({ useCache: false });
+      
+      // Timeout MCP connection after 8 seconds — don't block chat if Pipedream is slow
+      const mcpTools = await Promise.race([
+        mcpSession.tools({ useCache: false }),
+        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('MCP connection timeout (8s)')), 8000)),
+      ]);
 
-      // Merge: local tools take priority (same name = local wins)
-      allTools = { ...mcpTools, ...localTools };
-      console.log(`[Chat] Loaded ${Object.keys(mcpTools).length} MCP tools + ${Object.keys(localTools).length} local tools`);
+      if (mcpTools) {
+        // Merge: local tools take priority (same name = local wins)
+        allTools = { ...mcpTools, ...localTools };
+        console.log(`[Chat] Loaded ${Object.keys(mcpTools).length} MCP tools + ${Object.keys(localTools).length} local tools`);
+      }
     } catch (error) {
       console.error('[Chat] MCP connection failed, using local tools only:', error);
+      if (mcpSession) mcpSession.close();
+      mcpSession = null;
       allTools = localTools;
     }
   } else {
@@ -289,14 +298,22 @@ export async function POST(req: Request) {
 
   const selectedModel = modelName ? getModel(modelName) : primaryModel;
 
-  const result = streamText({
-    model: selectedModel,
-    system: systemPrompt,
-    messages,
-    // Allow up to 8 tool-call roundtrips before stopping
-    stopWhen: stepCountIs(8),
-    tools: allTools,
-  });
+  try {
+    const result = streamText({
+      model: selectedModel,
+      system: systemPrompt,
+      messages,
+      // Allow up to 8 tool-call roundtrips before stopping
+      stopWhen: stepCountIs(8),
+      tools: allTools,
+    });
 
-  return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    console.error('[Chat] Stream error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to generate response. Please try again.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }
