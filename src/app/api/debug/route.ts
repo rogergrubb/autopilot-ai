@@ -33,5 +33,22 @@ export async function GET() {
     };
   }
 
+  // Test Pipedream SDK authentication
+  try {
+    const { PipedreamClient } = await import('@pipedream/sdk');
+    const client = new PipedreamClient();
+    const token = await client.rawAccessToken;
+    diagnostics.pipedream = {
+      status: token ? 'OK' : 'NO_TOKEN',
+      tokenPreview: token ? `${String(token).slice(0, 15)}...` : null,
+    };
+  } catch (error: unknown) {
+    const err = error as Error;
+    diagnostics.pipedream = {
+      status: 'ERROR',
+      message: err.message,
+    };
+  }
+
   return Response.json(diagnostics, { status: 200 });
 }
