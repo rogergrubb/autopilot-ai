@@ -19,11 +19,11 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit 44fb28d)
+- Build: ✅ Passing on Vercel (commit 1f86c8e)
 - Deploy: ✅ Production READY — auto-deploying via webhook
 - Git webhook: ✅ Working
 - MCP: ✅ Wired (Pipedream SDK)
-- DB: ✅ Neon PostgreSQL connected, 12 tables migrated
+- DB: ✅ Neon PostgreSQL connected, 13 tables migrated
 - Browser: ✅ Browserbase + Playwright live (real cloud browser)
 - Chat Persistence: ✅ Auto-save, load, delete, sidebar history
 - Sidebar: ✅ 4-tab design (Chats, Projects, KB, Skills) + model selector
@@ -33,6 +33,7 @@
 - Knowledge Bases: ✅ File upload, URL import, text notes, searchKnowledge tool
 - Notifications: ✅ Agent inbox with bell icon, sendNotification tool
 - Settings: ✅ Panel with profile, model prefs, integrations dashboard, danger zone
+- Memory Import: ✅ ChatGPT memory import modal, auto-show on first visit, system prompt injection
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -125,9 +126,18 @@
     - Danger zone: clear chats/notifications/projects with confirm
     - Integration health ring (% configured)
     - Never exposes actual key values
-17. Phone calls (Twilio + ElevenLabs) — BLOCKED: needs API keys
-18. Mobile responsive layout
-19. Auth improvements (real user accounts)
+17. ~~ChatGPT Memory Import~~ ✅ DONE
+    - user_memories table in Neon (13 tables)
+    - API: GET/POST/DELETE /api/memories
+    - Parses raw ChatGPT text: bullets, numbered lists, '...' separators
+    - Auto-categorizes: preferences, work, location, technical, personal, etc
+    - ImportMemoriesModal: 2-step flow with ChatGPT link + paste area
+    - Auto-shows on first visit (if no memories)
+    - Memories injected into system prompt per chat request
+    - Settings panel: memories count, import more, clear all
+18. Phone calls (Twilio + ElevenLabs) — BLOCKED: needs API keys
+19. Mobile responsive layout
+20. Auth improvements (real user accounts)
 
 ## Credentials Secured
 - GOOGLE_GENERATIVE_AI_API_KEY: Set on Vercel ✅
