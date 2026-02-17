@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { NotificationInbox } from './NotificationInbox';
+import { SettingsPanel } from './SettingsPanel';
 
 const AVAILABLE_MODELS = [
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', speed: 'Smart' },
@@ -57,6 +58,7 @@ export function Sidebar() {
   const [textInput, setTextInput] = useState('');
   const [textName, setTextName] = useState('');
   const [uploadMode, setUploadMode] = useState<'file' | 'url' | 'text'>('file');
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -653,7 +655,7 @@ export function Sidebar() {
               <Leaf className="w-3 h-3" />
               <span>12 tables · {AGENT_SKILLS.length} skills</span>
             </div>
-            <button className="p-1 rounded hover:bg-black/5 text-[#b5ae9e] hover:text-[#1a1a1a] transition-colors">
+            <button onClick={() => setShowSettings(true)} className="p-1 rounded hover:bg-black/5 text-[#b5ae9e] hover:text-[#1a1a1a] transition-colors">
               <Settings className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -663,6 +665,9 @@ export function Sidebar() {
           </div>
         )}
       </div>
+
+      {/* Settings Panel Modal */}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </aside>
   );
 }
