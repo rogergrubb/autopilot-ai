@@ -19,11 +19,11 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit 1f86c8e)
+- Build: ✅ Passing on Vercel (commit e90c6e9)
 - Deploy: ✅ Production READY — auto-deploying via webhook
 - Git webhook: ✅ Working
 - MCP: ✅ Wired (Pipedream SDK)
-- DB: ✅ Neon PostgreSQL connected, 13 tables migrated
+- DB: ✅ Neon PostgreSQL connected, 16 tables migrated
 - Browser: ✅ Browserbase + Playwright live (real cloud browser)
 - Chat Persistence: ✅ Auto-save, load, delete, sidebar history
 - Sidebar: ✅ 4-tab design (Chats, Projects, KB, Skills) + model selector
@@ -35,6 +35,7 @@
 - Settings: ✅ Panel with profile, model prefs, integrations dashboard, danger zone
 - Memory Import: ✅ ChatGPT memory import modal, auto-show on first visit, system prompt injection
 - Phone Calls: ✅ Twilio AI voice calls — makePhoneCall tool, TwiML webhook, call tracking, 6 voice options
+- Autonomous Tasks: ✅ Background multi-step execution engine — task queue, self-chaining, cron safety net
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
