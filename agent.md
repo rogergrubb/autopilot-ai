@@ -19,17 +19,18 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit 7f53dea)
+- Build: ✅ Passing on Vercel (commit e691d55)
 - Deploy: ✅ Production READY — auto-deploying via webhook
 - Git webhook: ✅ Working
 - MCP: ✅ Wired (Pipedream SDK)
-- DB: ✅ Neon PostgreSQL connected, 9 tables migrated (chats added)
+- DB: ✅ Neon PostgreSQL connected, 11 tables migrated (+ knowledge_bases, knowledge_documents)
 - Browser: ✅ Browserbase + Playwright live (real cloud browser)
 - Chat Persistence: ✅ Auto-save, load, delete, sidebar history
 - Sidebar: ✅ 4-tab design (Chats, Projects, KB, Skills) + model selector
 - Model Selector: ✅ Dynamic Gemini Pro/Flash switching
 - Projects: ✅ Persistent (CRUD API + Neon DB)
 - Reasoning: ✅ selfReflect + planNextSteps tools
+- Knowledge Bases: ✅ File upload, URL import, text notes, searchKnowledge tool
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -98,7 +99,14 @@
     - Auto-continue triggers reflection first
     - Purple/blue reflection cards in chat UI
 13. ~~Wire Projects to database~~ ✅ DONE (CRUD API + Neon persistence)
-14. Knowledge base file upload (PDF, docs, links)
+14. ~~Knowledge base file upload~~ ✅ DONE
+    - knowledge_bases + knowledge_documents tables in Neon
+    - Full CRUD API for KBs and documents
+    - File upload (.txt, .md, .csv, .json, .html, .pdf, .py, .js, etc)
+    - URL import (fetches + strips HTML)
+    - Text notes (paste directly)
+    - searchKnowledge tool for agent to query KB content
+    - Sidebar KB tab with expand/collapse, File/URL/Text upload modes
 15. Agent inbox / notifications
 
 ## Credentials Secured
