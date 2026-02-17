@@ -1,4 +1,4 @@
-import { streamText, tool, stepCountIs, type ToolSet } from 'ai';
+import { streamText, tool, stepCountIs, convertToModelMessages, type ToolSet } from 'ai';
 import { z } from 'zod';
 import { primaryModel, getModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
 import { MCPSessionManager } from '@/lib/mcp-session';
@@ -297,13 +297,16 @@ export async function POST(req: Request) {
   }
 
   const selectedModel = modelName ? getModel(modelName) : primaryModel;
-  console.log(`[Chat] Using model: ${modelName || 'default'}, tools: ${Object.keys(allTools).length}, messages: ${messages.length}`);
+  
+  // Convert UIMessages from frontend to ModelMessages for streamText
+  const modelMessages = await convertToModelMessages(messages);
+  console.log(`[Chat] Using model: ${modelName || 'default'}, tools: ${Object.keys(allTools).length}, messages: ${modelMessages.length}`);
 
   try {
     const result = streamText({
       model: selectedModel,
       system: systemPrompt,
-      messages,
+      messages: modelMessages,
       // Allow up to 8 tool-call roundtrips before stopping
       stopWhen: stepCountIs(8),
       tools: allTools,
