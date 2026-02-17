@@ -34,6 +34,7 @@
 - Notifications: ✅ Agent inbox with bell icon, sendNotification tool
 - Settings: ✅ Panel with profile, model prefs, integrations dashboard, danger zone
 - Memory Import: ✅ ChatGPT memory import modal, auto-show on first visit, system prompt injection
+- Phone Calls: ✅ Twilio AI voice calls — makePhoneCall tool, TwiML webhook, call tracking, 6 voice options
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -135,7 +136,16 @@
     - Auto-shows on first visit (if no memories)
     - Memories injected into system prompt per chat request
     - Settings panel: memories count, import more, clear all
-18. Phone calls (Twilio + ElevenLabs) — BLOCKED: needs API keys
+18. ~~Phone Calls (Twilio)~~ ✅ DONE
+    - calls table in Neon (14 tables)
+    - POST /api/calls — Twilio REST API call initiation
+    - GET/POST /api/calls/twiml — TwiML webhook for voice
+    - makePhoneCall agent tool with 6 Polly voices
+    - Phone number normalization (US 10-digit, +1, E.164)
+    - Status callbacks: queued → in-progress → completed
+    - Green phone call card in chat UI
+    - Settings: Twilio integration status
+    - REQUIRES: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER in Vercel
 19. Mobile responsive layout
 20. Auth improvements (real user accounts)
 
