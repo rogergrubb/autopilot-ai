@@ -39,7 +39,7 @@ const FEATURE_ICONS: Record<string, typeof Globe> = {
   'NextAuth': Shield,
 };
 
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
+export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () => void; onOpenImportMemories?: () => void }) {
   const { selectedModel, setSelectedModel } = useAppStore();
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [expandedSection, setExpandedSection] = useState<string | null>('integrations');
   const [copied, setCopied] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState<string | null>(null);
+  const [memCount, setMemCount] = useState<number | null>(null);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -57,6 +58,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       setData(d);
       setName(d.user.name || '');
       setEmail(d.user.email || '');
+    } catch {}
+    try {
+      const res = await fetch('/api/memories');
+      const d = await res.json();
+      setMemCount(d.memories?.length || 0);
     } catch {}
     setLoading(false);
   }, []);
@@ -252,6 +258,70 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                     </div>
                   </button>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* === MEMORIES === */}
+          <div className="px-6 py-4 border-b border-[#e5e0d8]">
+            <button onClick={() => toggleSection('memories')} className="w-full flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#2d8a4e]" />
+                <span className="text-sm font-semibold text-[#1a1a1a]">Memories</span>
+                {memCount !== null && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2d8a4e]/10 text-[#2d8a4e] font-medium">
+                    {memCount}
+                  </span>
+                )}
+              </div>
+              {expandedSection === 'memories' ? <ChevronDown className="w-4 h-4 text-[#8a8478]" /> : <ChevronRight className="w-4 h-4 text-[#8a8478]" />}
+            </button>
+            {expandedSection === 'memories' && (
+              <div className="mt-3 space-y-3">
+                <p className="text-[11px] text-[#8a8478]">
+                  Memories help your agent understand your preferences, work style, and interests from day one.
+                </p>
+                {memCount === 0 ? (
+                  <div className="text-center py-4">
+                    <Brain className="w-8 h-8 text-[#d4cec2] mx-auto mb-2" />
+                    <p className="text-xs text-[#b5ae9e]">No memories imported yet</p>
+                    <button
+                      onClick={() => { onClose(); onOpenImportMemories?.(); }}
+                      className="mt-2 px-4 py-2 rounded-lg bg-[#2d8a4e] text-white text-xs font-medium hover:bg-[#247a42] transition-colors"
+                    >
+                      Import from ChatGPT
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-green-100 bg-green-50/50">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-[#1a1a1a]">{memCount} memories active</p>
+                        <p className="text-[10px] text-[#8a8478]">Your agent uses these to personalize responses</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { onClose(); onOpenImportMemories?.(); }}
+                        className="flex-1 px-3 py-2 rounded-lg border border-[#e5e0d8] text-xs font-medium text-[#8a8478] hover:text-[#2d8a4e] hover:border-[#2d8a4e]/30 transition-colors"
+                      >
+                        Import More
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm('Clear all imported memories?')) {
+                            await fetch('/api/memories', { method: 'DELETE' });
+                            setMemCount(0);
+                          }
+                        }}
+                        className="px-3 py-2 rounded-lg border border-red-100 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

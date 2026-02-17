@@ -12,6 +12,7 @@ import {
 
 import { NotificationInbox } from './NotificationInbox';
 import { SettingsPanel } from './SettingsPanel';
+import { ImportMemoriesModal } from '../onboarding/ImportMemoriesModal';
 
 const AVAILABLE_MODELS = [
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', speed: 'Smart' },
@@ -59,6 +60,8 @@ export function Sidebar() {
   const [textName, setTextName] = useState('');
   const [uploadMode, setUploadMode] = useState<'file' | 'url' | 'text'>('file');
   const [showSettings, setShowSettings] = useState(false);
+  const [showImportMemories, setShowImportMemories] = useState(false);
+  const [memoriesCount, setMemoriesCount] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -91,6 +94,19 @@ export function Sidebar() {
         const res = await fetch('/api/knowledge');
         const data = await res.json();
         if (data.knowledgeBases) setKbList(data.knowledgeBases);
+      } catch {}
+    })();
+    // Check if user has memories — show import modal on first visit
+    (async () => {
+      try {
+        const res = await fetch('/api/memories');
+        const data = await res.json();
+        const count = data.memories?.length || 0;
+        setMemoriesCount(count);
+        if (count === 0) {
+          // First visit — show import prompt after a small delay
+          setTimeout(() => setShowImportMemories(true), 1500);
+        }
       } catch {}
     })();
   }, [setChatHistory, setProjects, activeAgent?.id]);
@@ -667,7 +683,15 @@ export function Sidebar() {
       </div>
 
       {/* Settings Panel Modal */}
-      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} onOpenImportMemories={() => { setShowSettings(false); setShowImportMemories(true); }} />}
+
+      {/* Import Memories Modal */}
+      {showImportMemories && (
+        <ImportMemoriesModal
+          onClose={() => setShowImportMemories(false)}
+          onImported={(count) => setMemoriesCount((prev) => (prev || 0) + count)}
+        />
+      )}
     </aside>
   );
 }

@@ -212,11 +212,22 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// === User Memories (imported from ChatGPT or manually added) ===
+export const userMemories = pgTable("user_memories", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id").references(() => users.id),
+  content: text("content").notNull(),
+  category: text("category").default("general"),
+  source: text("source").default("manual"), // 'chatgpt', 'manual', 'agent'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // === Type exports ===
 export type Chat = typeof chats.$inferSelect;
 export type KnowledgeBase = typeof knowledgeBases.$inferSelect;
 export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type UserMemory = typeof userMemories.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type Project = typeof projects.$inferSelect;

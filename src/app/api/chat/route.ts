@@ -9,6 +9,9 @@ import { executeCode, isCodeSandboxAvailable } from '@/lib/tools/code-sandbox';
 import { selfReflect, planNextSteps } from '@/lib/tools/reasoning';
 import { searchKnowledge } from '@/lib/tools/knowledge-search';
 import { sendNotification } from '@/lib/tools/notifications';
+import { db } from '@/db';
+import { userMemories } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -231,9 +234,27 @@ function getLocalTools(): ToolSet {
 export async function POST(req: Request) {
   const { messages, agentRole = 'social_strategist', model: modelName } = await req.json();
 
-  const systemPrompt = agentRole === 'social_strategist'
+  let systemPrompt = agentRole === 'social_strategist'
     ? SOCIAL_STRATEGIST_PROMPT
     : 'You are a helpful AI assistant.';
+
+  // Load user memories and inject into system prompt
+  if (db) {
+    try {
+      const memories = await db
+        .select({ content: userMemories.content, category: userMemories.category })
+        .from(userMemories)
+        .where(eq(userMemories.userId, 'd30ca60b-0f38-498c-895d-30af8356af4a'))
+        .limit(100);
+
+      if (memories.length > 0) {
+        const memoryBlock = memories.map(m => `- [${m.category}] ${m.content}`).join('\n');
+        systemPrompt += `\n\n## User Context (Imported Memories)\nYou know the following about this user. Use this naturally in your responses without mentioning "memories" — just act on the knowledge:\n${memoryBlock}`;
+      }
+    } catch (e) {
+      console.error('[Chat] Failed to load user memories:', e);
+    }
+  }
 
   // Start with local tools
   const localTools = getLocalTools();
