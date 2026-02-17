@@ -35,15 +35,19 @@ const AGENT_SKILLS = [
   { name: 'Autonomous Tasks', icon: Rocket, desc: 'Background multi-step execution', active: true },
 ];
 
-export function Sidebar() {
+export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
   const {
     sidebarOpen, toggleSidebar,
+    mobileSidebarOpen, setMobileSidebarOpen,
     agents, activeAgent, setActiveAgent,
     chatHistory, setChatHistory, activeChatId, setActiveChatId,
     sidebarTab, setSidebarTab,
     selectedModel, setSelectedModel,
     projects, addProject, setProjects,
   } = useAppStore();
+
+  // On mobile, sidebar is always "open" (full width) when shown as drawer
+  const isOpen = forceMobileOpen || sidebarOpen;
 
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
@@ -121,7 +125,7 @@ export function Sidebar() {
     } catch {}
   };
 
-  const startNewChat = () => { setActiveChatId(null); window.location.href = '/'; };
+  const startNewChat = () => { setActiveChatId(null); closeMobile(); window.location.href = '/'; };
 
   const createProject = async () => {
     if (!newProjectTitle.trim()) return;
@@ -223,6 +227,11 @@ export function Sidebar() {
     setUploadingTo(null);
   };
 
+  // Close mobile sidebar on navigation
+  const closeMobile = () => {
+    if (forceMobileOpen) setMobileSidebarOpen(false);
+  };
+
   const currentModel = AVAILABLE_MODELS.find(m => m.id === selectedModel) || AVAILABLE_MODELS[0];
 
   const tabs = [
@@ -234,12 +243,12 @@ export function Sidebar() {
 
   return (
     <aside
-      className={cn('flex flex-col border-r transition-all duration-300 overflow-hidden', sidebarOpen ? 'w-72' : 'w-16')}
+      className={cn('flex flex-col border-r transition-all duration-300 overflow-hidden h-full', isOpen ? 'w-72' : 'w-16')}
       style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--sidebar-border)' }}>
-        {sidebarOpen && (
+        {isOpen && (
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#2d8a4e] flex items-center justify-center">
               <Leaf className="w-4 h-4 text-white" />
@@ -251,10 +260,16 @@ export function Sidebar() {
           </div>
         )}
         <div className="flex items-center gap-1">
-          {sidebarOpen && <NotificationInbox />}
-          <button onClick={toggleSidebar} className="p-1.5 rounded-lg hover:bg-black/5 text-[#8a8478] hover:text-[#1a1a1a] transition-colors">
-            {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
+          {isOpen && <NotificationInbox />}
+          {forceMobileOpen ? (
+            <button onClick={closeMobile} className="p-1.5 rounded-lg hover:bg-black/5 text-[#8a8478] hover:text-[#1a1a1a] transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <button onClick={toggleSidebar} className="p-1.5 rounded-lg hover:bg-black/5 text-[#8a8478] hover:text-[#1a1a1a] transition-colors">
+              {isOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       </div>
 
@@ -262,11 +277,11 @@ export function Sidebar() {
       <div className="p-3">
         <button onClick={startNewChat} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#2d8a4e] hover:bg-[#247a42] text-white transition-all text-sm font-medium shadow-sm">
           <Plus className="w-4 h-4" />
-          {sidebarOpen && <span>New Chat</span>}
+          {isOpen && <span>New Chat</span>}
         </button>
       </div>
 
-      {sidebarOpen && (
+      {isOpen && (
         <>
           {/* Tab Navigation */}
           <div className="px-3 flex gap-1">
@@ -322,7 +337,7 @@ export function Sidebar() {
                     ) : chatHistory.map((chat) => (
                       <div
                         key={chat.id}
-                        onClick={() => setActiveChatId(chat.id)}
+                        onClick={() => { setActiveChatId(chat.id); closeMobile(); }}
                         className={cn(
                           'group w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all',
                           activeChatId === chat.id
@@ -667,7 +682,7 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="p-3 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
-        {sidebarOpen ? (
+        {isOpen ? (
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2 text-[#b5ae9e] text-[10px]">
               <Leaf className="w-3 h-3" />

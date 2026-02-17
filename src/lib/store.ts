@@ -36,6 +36,8 @@ interface AppState {
   // Sidebar
   sidebarOpen: boolean;
   toggleSidebar: () => void;
+  mobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
   sidebarTab: 'chats' | 'projects' | 'knowledge' | 'skills';
   setSidebarTab: (tab: 'chats' | 'projects' | 'knowledge' | 'skills') => void;
 
@@ -71,6 +73,8 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   sidebarOpen: true,
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  mobileSidebarOpen: false,
+  setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
   sidebarTab: 'chats',
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
 

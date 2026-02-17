@@ -111,7 +111,7 @@ export function NotificationInbox() {
 
       {/* Dropdown Panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-h-[500px] bg-white rounded-xl border border-[#e5e0d8] shadow-xl z-50 overflow-hidden flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-72 md:w-80 max-h-[70vh] md:max-h-[500px] bg-white rounded-xl border border-[#e5e0d8] shadow-xl z-50 overflow-hidden flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e0d8]">
             <h3 className="text-sm font-semibold text-[#1a1a1a]">Inbox</h3>

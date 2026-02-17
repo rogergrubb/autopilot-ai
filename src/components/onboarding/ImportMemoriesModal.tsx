@@ -43,9 +43,9 @@ export function ImportMemoriesModal({ onClose, onImported }: ImportMemoriesModal
   // Success state
   if (result) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={onClose}>
         <div
-          className="w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+          className="w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8 text-center">
@@ -72,9 +72,9 @@ export function ImportMemoriesModal({ onClose, onImported }: ImportMemoriesModal
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={onClose}>
       <div
-        className="w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

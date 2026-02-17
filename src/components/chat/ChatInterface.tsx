@@ -251,13 +251,13 @@ export function ChatInterface() {
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b bg-white/80 backdrop-blur-sm" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3 border-b bg-white/80 backdrop-blur-sm" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
           {activeAgent && (
             <>
-              <span className="text-2xl">{activeAgent.avatar}</span>
-              <div>
-                <h2 className="text-sm font-semibold text-[#1a1a1a]">{activeAgent.name}</h2>
+              <span className="text-xl md:text-2xl">{activeAgent.avatar}</span>
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-[#1a1a1a] truncate">{activeAgent.name}</h2>
                 <p className="text-[10px] text-[#8a8478] capitalize flex items-center gap-1">
                   <span className={cn(
                     'w-1.5 h-1.5 rounded-full inline-block',
@@ -270,28 +270,28 @@ export function ChatInterface() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
           {isLoading && (
             <>
-              <span className="flex items-center gap-1.5 text-[10px] text-[#2d8a4e] bg-[#e8f5ec] px-2.5 py-1 rounded-full font-medium">
+              <span className="flex items-center gap-1.5 text-[10px] text-[#2d8a4e] bg-[#e8f5ec] px-2 md:px-2.5 py-1 rounded-full font-medium">
                 <Clock className="w-3 h-3" />
                 {formatElapsed(elapsedMs)}
               </span>
               {stepCount > 0 && (
-                <span className="flex items-center gap-1.5 text-[10px] text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full font-medium">
+                <span className="hidden sm:flex items-center gap-1.5 text-[10px] text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full font-medium">
                   <Zap className="w-3 h-3" />
                   Step {stepCount}
                 </span>
               )}
               {autoContinuing && (
-                <span className="flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full animate-pulse font-medium">
+                <span className="hidden sm:flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full animate-pulse font-medium">
                   <RotateCcw className="w-3 h-3" />
                   Auto-continuing ({continueCount}/{MAX_CONTINUES})
                 </span>
               )}
             </>
           )}
-          <span className="text-[10px] text-[#b5ae9e] bg-[#f0ece4] px-2 py-1 rounded font-medium">
+          <span className="hidden sm:inline text-[10px] text-[#b5ae9e] bg-[#f0ece4] px-2 py-1 rounded font-medium">
             Gemini 2.5 Pro
           </span>
         </div>
@@ -357,7 +357,7 @@ export function ChatInterface() {
 
                   <div
                     className={cn(
-                      'max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                      'max-w-[90%] md:max-w-[80%] rounded-2xl px-3 md:px-4 py-3 text-sm leading-relaxed',
                       message.role === 'user'
                         ? 'bg-[#2d8a4e] text-white shadow-sm'
                         : 'bg-white border shadow-sm text-[#1a1a1a]'
@@ -667,7 +667,8 @@ export function ChatInterface() {
             </button>
           </div>
           <p className="text-center text-[10px] text-[#b5ae9e] mt-2">
-            Powered by Gemini 2.5 Pro · Deep Research · Web Browser · 3000+ App Integrations
+            <span className="hidden sm:inline">Powered by Gemini 2.5 Pro · Deep Research · Web Browser · 3000+ App Integrations</span>
+            <span className="sm:hidden">Gemini 2.5 Pro · 3000+ Apps</span>
           </p>
         </form>
       </div>

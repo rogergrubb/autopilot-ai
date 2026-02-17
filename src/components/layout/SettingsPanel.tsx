@@ -118,8 +118,8 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-        <div className="w-[600px] bg-white rounded-2xl p-8 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+        <div className="w-full max-w-[600px] bg-white rounded-2xl p-6 md:p-8 text-center">
           <RefreshCw className="w-6 h-6 animate-spin text-[#2d8a4e] mx-auto" />
           <p className="text-sm text-[#8a8478] mt-3">Loading settings...</p>
         </div>
@@ -132,9 +132,9 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
   const percentage = data?.summary.percentage || 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={onClose}>
       <div
-        className="w-[640px] max-h-[85vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-[640px] max-h-[85vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

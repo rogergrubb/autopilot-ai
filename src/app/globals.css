@@ -56,3 +56,23 @@ body {
 }
 .prose-agent pre code { background: none; color: inherit; padding: 0; }
 .prose-agent a { color: #2d8a4e; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Mobile drawer animation */
+@keyframes slideInFromLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-left { animation: slideInFromLeft 0.2s ease-out; }
+
+/* Safe area for iPhones with notch */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Prevent rubber-banding on mobile */
+@media (max-width: 768px) {
+  html, body { overscroll-behavior: none; }
+  /* Make text inputs 16px+ to prevent iOS zoom */
+  textarea, input { font-size: 16px !important; }
+  @media (min-width: 768px) { textarea, input { font-size: unset !important; } }
+}
