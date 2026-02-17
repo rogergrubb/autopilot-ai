@@ -11,6 +11,7 @@ import { searchKnowledge } from '@/lib/tools/knowledge-search';
 import { sendNotification } from '@/lib/tools/notifications';
 import { makePhoneCall } from '@/lib/tools/phone-call';
 import { createAutonomousTask, checkTaskStatus } from '@/lib/tools/autonomous-task';
+import { postToReddit, postToTwitter, postToFacebook, postToLinkedIn } from '@/lib/social/post';
 import { db } from '@/db';
 import { userMemories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -233,6 +234,55 @@ function getLocalTools(): ToolSet {
         return await executeCode(code, language || 'python', packages);
       },
     }),
+
+    // ── Social Posting (Pipedream Connect) ─────────────────────────────
+    // These tools actually publish content to social platforms.
+    // If the account isn't connected, they return a connect URL for the user.
+    ...(isPipedreamConfigured ? {
+      publishToReddit: tool({
+        description: 'Actually publish a post to a Reddit subreddit. Requires a connected Reddit account. If not connected, returns a link for the user to connect their account. Use this after drafting content with createSocialPost when the user wants to actually post it live.',
+        inputSchema: z.object({
+          subreddit: z.string().describe('The subreddit to post to (e.g. "Flipping" or "r/Flipping")'),
+          title: z.string().describe('The post title'),
+          content: z.string().describe('The post body text'),
+        }),
+        execute: async ({ subreddit, title, content }) => {
+          return await postToReddit(subreddit, title, content);
+        },
+      }),
+
+      publishToTwitter: tool({
+        description: 'Actually publish a tweet on Twitter/X. Requires a connected Twitter account. Max 280 characters. If not connected, returns a link for the user to connect their account.',
+        inputSchema: z.object({
+          content: z.string().describe('The tweet text (max 280 characters)'),
+        }),
+        execute: async ({ content }) => {
+          return await postToTwitter(content);
+        },
+      }),
+
+      publishToFacebook: tool({
+        description: 'Actually publish a post to a Facebook Page. Requires a connected Facebook Pages account. If not connected, returns a link for the user to connect their account.',
+        inputSchema: z.object({
+          content: z.string().describe('The post text'),
+          pageId: z.string().optional().describe('The Facebook Page ID to post to'),
+        }),
+        execute: async ({ content, pageId }) => {
+          return await postToFacebook(content, pageId);
+        },
+      }),
+
+      publishToLinkedIn: tool({
+        description: 'Actually publish a post to LinkedIn. Requires a connected LinkedIn account. If not connected, returns a link for the user to connect their account.',
+        inputSchema: z.object({
+          content: z.string().describe('The post text'),
+          url: z.string().optional().describe('Optional URL to include in the post'),
+        }),
+        execute: async ({ content, url }) => {
+          return await postToLinkedIn(content, url);
+        },
+      }),
+    } : {}),
   };
 }
 

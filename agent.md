@@ -156,7 +156,17 @@
     - Settings/Import modals full-width on mobile
     - iOS viewport config (no zoom, safe-area padding)
     - 16px font inputs to prevent iOS zoom
-20. Auth improvements (real user accounts)
+20. ~~Social posting integration (Pipedream Connect)~~ ✅ DONE
+    - Direct SDK integration (bypasses slow MCP for reliability)
+    - 4 platforms: Reddit, Twitter/X, Facebook Pages, LinkedIn
+    - Agent tools: publishToReddit, publishToTwitter, publishToFacebook, publishToLinkedIn
+    - Auto-detects unconnected accounts → returns connect URL
+    - API routes: /api/social/connect, /api/social/accounts, /api/social/post
+    - Settings panel: Social Accounts section with connect/reconnect buttons
+    - Pipedream Connect Link OAuth flow (opens in new tab)
+    - Platform config: src/lib/social/config.ts
+    - Tool implementations: src/lib/social/post.ts
+21. Auth improvements (real user accounts)
 
 ## Credentials Secured
 - GOOGLE_GENERATIVE_AI_API_KEY: Set on Vercel ✅

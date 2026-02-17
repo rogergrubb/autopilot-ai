@@ -7,7 +7,7 @@ import {
   X, User, Key, Shield, Trash2, CheckCircle2, XCircle,
   ExternalLink, Copy, Check, AlertTriangle, Sparkles,
   Database, Globe, Code, Image, Search, Zap, Brain,
-  Bell, RefreshCw, ChevronDown, ChevronRight, Phone,
+  Bell, RefreshCw, ChevronDown, ChevronRight, Phone, Share2,
 } from 'lucide-react';
 
 interface EnvVar {
@@ -53,6 +53,12 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
   const [copied, setCopied] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState<string | null>(null);
   const [memCount, setMemCount] = useState<number | null>(null);
+  const [socialAccounts, setSocialAccounts] = useState<Array<{
+    platform: string; name: string; icon: string; color: string;
+    connected: boolean; accountId: string | null; accountName: string | null;
+  }>>([]);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -71,6 +77,39 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
   }, []);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  // Fetch social account connection status
+  const fetchSocialAccounts = useCallback(async () => {
+    setSocialLoading(true);
+    try {
+      const res = await fetch('/api/social/accounts');
+      const d = await res.json();
+      if (d.accounts) setSocialAccounts(d.accounts);
+    } catch {}
+    setSocialLoading(false);
+  }, []);
+
+  useEffect(() => { fetchSocialAccounts(); }, [fetchSocialAccounts]);
+
+  const connectSocial = async (platform: string) => {
+    setConnectingPlatform(platform);
+    try {
+      const res = await fetch('/api/social/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform }),
+      });
+      const d = await res.json();
+      if (d.connectUrl) {
+        window.open(d.connectUrl, '_blank', 'width=600,height=700');
+        // Poll for connection status after a delay
+        setTimeout(() => fetchSocialAccounts(), 5000);
+        setTimeout(() => fetchSocialAccounts(), 15000);
+        setTimeout(() => fetchSocialAccounts(), 30000);
+      }
+    } catch {}
+    setConnectingPlatform(null);
+  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -395,6 +434,71 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
                     After adding/changing env vars in Vercel, redeploy to activate them.
                   </p>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* === SOCIAL ACCOUNTS === */}
+          <div className="px-6 py-4 border-t border-[#e8e0d4]/60">
+            <button onClick={() => toggleSection('social')} className="w-full flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-[#2d8a4e]" />
+                <span className="text-sm font-semibold text-[#1a1a1a]">Social Accounts</span>
+              </div>
+              {expandedSection === 'social' ? <ChevronDown className="w-4 h-4 text-[#8a8478]" /> : <ChevronRight className="w-4 h-4 text-[#8a8478]" />}
+            </button>
+            {expandedSection === 'social' && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-[#8a8478] mb-3">
+                  Connect your social accounts so the agent can publish posts directly to these platforms.
+                </p>
+                {socialLoading ? (
+                  <div className="flex items-center gap-2 py-4 justify-center">
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#8a8478]" />
+                    <span className="text-xs text-[#8a8478]">Loading accounts...</span>
+                  </div>
+                ) : socialAccounts.length > 0 ? (
+                  socialAccounts.map((acc) => (
+                    <div key={acc.platform} className="flex items-center justify-between px-4 py-3 rounded-lg border bg-white" style={{ borderColor: acc.connected ? '#d1fae5' : '#e8e0d4' }}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{acc.icon}</span>
+                        <div>
+                          <p className="text-xs font-medium text-[#1a1a1a]">{acc.name}</p>
+                          {acc.connected ? (
+                            <p className="text-[10px] text-emerald-600 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Connected{acc.accountName ? ` · ${acc.accountName}` : ''}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-[#8a8478]">Not connected</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => connectSocial(acc.platform)}
+                        disabled={connectingPlatform === acc.platform}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors",
+                          acc.connected
+                            ? "bg-gray-100 text-[#8a8478] hover:bg-gray-200"
+                            : "bg-[#2d8a4e] text-white hover:bg-[#236b3e]"
+                        )}
+                      >
+                        {connectingPlatform === acc.platform ? '...' : acc.connected ? 'Reconnect' : 'Connect'}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-xs text-[#8a8478]">Social account connections require Pipedream integration.</p>
+                    <p className="text-[10px] text-[#8a8478] mt-1">Ensure PIPEDREAM_CLIENT_ID, SECRET, and PROJECT_ID are set.</p>
+                  </div>
+                )}
+                <button
+                  onClick={fetchSocialAccounts}
+                  className="w-full mt-2 text-[11px] text-[#2d8a4e] hover:underline"
+                >
+                  ↻ Refresh connection status
+                </button>
               </div>
             )}
           </div>
