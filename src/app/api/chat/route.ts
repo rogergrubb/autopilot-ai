@@ -297,6 +297,7 @@ export async function POST(req: Request) {
   }
 
   const selectedModel = modelName ? getModel(modelName) : primaryModel;
+  console.log(`[Chat] Using model: ${modelName || 'default'}, tools: ${Object.keys(allTools).length}, messages: ${messages.length}`);
 
   try {
     const result = streamText({
@@ -306,6 +307,9 @@ export async function POST(req: Request) {
       // Allow up to 8 tool-call roundtrips before stopping
       stopWhen: stepCountIs(8),
       tools: allTools,
+      onError: ({ error }) => {
+        console.error('[Chat] Stream error from model:', error);
+      },
     });
 
     return result.toUIMessageStreamResponse();

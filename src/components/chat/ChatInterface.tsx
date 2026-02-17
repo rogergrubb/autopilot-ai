@@ -60,6 +60,7 @@ export function ChatInterface() {
   const [stepCount, setStepCount] = useState(0);
   const [continueCount, setContinueCount] = useState(0);
   const [autoContinuing, setAutoContinuing] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,9 +145,12 @@ export function ChatInterface() {
         saveChat(messagesRef.current);
       }, 500);
     },
-    onError: () => {
+    onError: (error) => {
       stopTimer();
       setAutoContinuing(false);
+      const msg = error instanceof Error ? error.message : String(error);
+      setChatError(msg || 'Something went wrong. Check your API key in Settings.');
+      console.error('[Chat] Error:', error);
     },
   });
 
@@ -206,6 +210,7 @@ export function ChatInterface() {
     setContinueCount(0);
     setStepCount(0);
     setAutoContinuing(false);
+    setChatError(null);
     sendMessage({ text: input });
     setInput('');
     startTimer();
@@ -628,6 +633,16 @@ export function ChatInterface() {
         >
           <ArrowDown className="w-4 h-4" />
         </button>
+      )}
+
+      {/* Error Banner */}
+      {chatError && (
+        <div className="px-4 pt-2">
+          <div className="max-w-3xl mx-auto bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between">
+            <p className="text-sm text-red-700">{chatError}</p>
+            <button onClick={() => setChatError(null)} className="text-red-400 hover:text-red-600 ml-3 text-lg font-bold">&times;</button>
+          </div>
+        </div>
       )}
 
       {/* Input Area */}
