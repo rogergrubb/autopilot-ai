@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { primaryModel, SOCIAL_STRATEGIST_PROMPT, PRODUCTS } from '@/lib/ai/config';
 import { MCPSessionManager } from '@/lib/mcp-session';
 import { deepResearch } from '@/lib/tools/deep-research';
-import { browseWeb, extractFromPage } from '@/lib/tools/web-browser';
+import { browseWeb, extractFromPage, interactWithPage, isBrowserAvailable, hasBrowserCapabilities } from '@/lib/tools/web-browser';
 import { generateImage } from '@/lib/tools/image-gen';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
@@ -140,9 +140,13 @@ function getLocalTools(): ToolSet {
           return await deepResearch(query, context);
         },
       }),
+    } : {}),
 
+    // Web Browser — uses Browserbase (real browser) or Claude Haiku fallback
+    // Available when BROWSERBASE_API_KEY or ANTHROPIC_API_KEY is set
+    ...(isBrowserAvailable() ? {
       browseWeb: tool({
-        description: 'Browse a web page and extract information. Acts as a lightweight web browser — can visit URLs, read page content, and follow instructions about what to look for. Use for: reading articles, checking website content, monitoring pages, gathering specific data from URLs.',
+        description: 'Browse a web page and extract information. Uses a real cloud browser (Browserbase + Playwright) to navigate URLs, read page content, handle JavaScript-rendered sites, and follow instructions about what to look for. Use for: reading articles, checking website content, monitoring pages, gathering specific data from URLs, viewing JS-heavy single-page apps.',
         inputSchema: z.object({
           url: z.string().describe('The URL to visit and read'),
           instructions: z.string().describe('What to look for or extract from the page'),
@@ -153,13 +157,32 @@ function getLocalTools(): ToolSet {
       }),
 
       extractData: tool({
-        description: 'Extract structured data from a web page. Visits a URL and pulls out specific fields into a JSON object. Use for: scraping product info, extracting contact details, pulling pricing data, reading tables.',
+        description: 'Extract structured data from a web page. Visits a URL with a real browser and pulls out specific fields. Use for: scraping product info, extracting contact details, pulling pricing data, reading tables, getting data from JS-rendered pages.',
         inputSchema: z.object({
           url: z.string().describe('The URL to extract data from'),
           dataSchema: z.string().describe('Description of the data fields to extract, e.g. "product name, price, rating, number of reviews"'),
         }),
         execute: async ({ url, dataSchema }) => {
           return await extractFromPage(url, dataSchema);
+        },
+      }),
+    } : {}),
+
+    // Page Interaction — ONLY available with Browserbase (needs real browser)
+    // Enables clicking, filling forms, scrolling — things only a real browser can do
+    ...(hasBrowserCapabilities() ? {
+      interactWithPage: tool({
+        description: 'Interact with a web page using a real browser — click buttons, fill out forms, scroll, and wait for elements. This is for ACTIVE interaction, not just reading. Use for: signing up for services, filling out forms, clicking through multi-step flows, accepting terms, logging into websites. Each step specifies an action (click/fill/scroll/wait) and a CSS selector.',
+        inputSchema: z.object({
+          url: z.string().describe('The URL to navigate to before interacting'),
+          steps: z.array(z.object({
+            action: z.enum(['click', 'fill', 'scroll', 'wait', 'screenshot']).describe('The action to perform'),
+            selector: z.string().optional().describe('CSS selector for the element to interact with (required for click/fill)'),
+            value: z.string().optional().describe('Value to type (for fill action) or milliseconds to wait (for wait action)'),
+          })).describe('Ordered list of interaction steps to perform on the page'),
+        }),
+        execute: async ({ url, steps }) => {
+          return await interactWithPage(url, steps);
         },
       }),
     } : {}),
