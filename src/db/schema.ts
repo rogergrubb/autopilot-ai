@@ -222,12 +222,27 @@ export const userMemories = pgTable("user_memories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// === Phone Calls (Twilio voice calls) ===
+export const calls = pgTable("calls", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id").references(() => users.id),
+  toNumber: text("to_number").notNull(),
+  fromNumber: text("from_number"),
+  message: text("message").notNull(),
+  voice: text("voice").default("Polly.Joanna"),
+  status: text("status").default("queued"),
+  twilioSid: text("twilio_sid"),
+  duration: integer("duration"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // === Type exports ===
 export type Chat = typeof chats.$inferSelect;
 export type KnowledgeBase = typeof knowledgeBases.$inferSelect;
 export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type UserMemory = typeof userMemories.$inferSelect;
+export type Call = typeof calls.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type Project = typeof projects.$inferSelect;

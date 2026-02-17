@@ -18,6 +18,9 @@ const ENV_VAR_MAP = {
   PIPEDREAM_PROJECT_ID: { label: 'Pipedream Project', feature: 'MCP Server', where: 'pipedream.com → Project Settings' },
   DATABASE_URL: { label: 'Database', feature: 'Chat history, Projects, Knowledge, Notifications', where: 'Neon → Dashboard → Connection String' },
   NEXTAUTH_SECRET: { label: 'NextAuth', feature: 'Authentication', where: 'Generate with: openssl rand -base64 32' },
+  TWILIO_ACCOUNT_SID: { label: 'Twilio', feature: 'AI Phone Calls', where: 'twilio.com → Console → Account Info → Account SID' },
+  TWILIO_AUTH_TOKEN: { label: 'Twilio Auth', feature: 'AI Phone Calls', where: 'twilio.com → Console → Account Info → Auth Token' },
+  TWILIO_PHONE_NUMBER: { label: 'Twilio Number', feature: 'AI Phone Calls (caller ID)', where: 'twilio.com → Phone Numbers → Manage → Active Numbers' },
 } as const;
 
 // GET /api/settings — return user settings + env var status

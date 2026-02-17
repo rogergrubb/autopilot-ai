@@ -385,7 +385,8 @@ export function ChatInterface() {
                         const isReflection = toolPart.toolName === 'selfReflect';
                         const isPlan = toolPart.toolName === 'planNextSteps';
                         const isNotification = toolPart.toolName === 'sendNotification';
-                        const isSpecial = isReflection || isPlan || isNotification;
+                        const isPhoneCall = toolPart.toolName === 'makePhoneCall';
+                        const isSpecial = isReflection || isPlan || isNotification || isPhoneCall;
 
                         // Special rendering for reasoning and notification tools
                         if (isSpecial && toolPart.output) {
@@ -404,6 +405,28 @@ export function ChatInterface() {
                                   )}
                                 </div>
                                 <p className="text-[11px] text-amber-800 mt-1">{String(output.message || '')}</p>
+                              </div>
+                            );
+                          }
+
+                          if (isPhoneCall) {
+                            return (
+                              <div key={i} className="my-2 p-3 rounded-lg border-l-4 border-l-green-400 border border-green-100" style={{ backgroundColor: '#f0fdf4' }}>
+                                <div className="flex items-center gap-2 text-[10px] text-green-700 font-medium">
+                                  <span>📞</span>
+                                  <span className="uppercase tracking-wider">Phone Call</span>
+                                  {output.success ? (
+                                    <span className="text-green-600 ml-auto">✓ Initiated</span>
+                                  ) : (
+                                    <span className="text-red-500 ml-auto">✗ Failed</span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-green-800 mt-1">
+                                  {output.success
+                                    ? `Calling ${String(output.to || '')} — the recipient will hear your message via AI voice.`
+                                    : String(output.error || 'Call failed')
+                                  }
+                                </p>
                               </div>
                             );
                           }

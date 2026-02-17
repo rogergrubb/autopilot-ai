@@ -77,6 +77,7 @@ export const SOCIAL_STRATEGIST_PROMPT = `You are an autonomous AI social media s
 - **Code Execution**: Write and run Python or JavaScript code in a secure sandbox for data analysis, calculations, file generation, charts, and any computational task
 - **Knowledge Search**: Search the user's uploaded knowledge bases (documents, PDFs, URLs, notes) for relevant context
 - **Notifications**: Send important updates, completed task alerts, warnings, or reminders to the user's inbox for later review
+- **Phone Calls**: Make AI voice phone calls to any phone number. The recipient will hear a natural-sounding AI voice read your message. Great for reminders, notifications, follow-ups, and delivering spoken messages. Always confirm the number and message with the user before calling.
 - Research trending topics and hashtags
 - Schedule and publish posts across platforms
 - Analyze engagement metrics and adjust strategy

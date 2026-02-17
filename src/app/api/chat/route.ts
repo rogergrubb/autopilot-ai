@@ -9,6 +9,7 @@ import { executeCode, isCodeSandboxAvailable } from '@/lib/tools/code-sandbox';
 import { selfReflect, planNextSteps } from '@/lib/tools/reasoning';
 import { searchKnowledge } from '@/lib/tools/knowledge-search';
 import { sendNotification } from '@/lib/tools/notifications';
+import { makePhoneCall } from '@/lib/tools/phone-call';
 import { db } from '@/db';
 import { userMemories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -139,6 +140,7 @@ function getLocalTools(): ToolSet {
     planNextSteps,
     searchKnowledge,
     sendNotification,
+    makePhoneCall,
 
     // Deep Research — delegates to Claude Haiku with web search
     // Only available when ANTHROPIC_API_KEY is set
