@@ -19,11 +19,12 @@
 - Sidebar: Knowledge Bases, Skills, Agent Inbox, model selector, settings, credits
 
 ## 3. Current State
-- Build: ✅ Passing on Vercel (commit bcc3c55)
-- Deploy: ✅ Production READY
-- Git webhook: ✅ Working (was disconnected, now fixed)
-- MCP: ✅ Wired (Pipedream SDK + @modelcontextprotocol/sdk installed, env vars set)
-- DB: ✅ Neon PostgreSQL connected, 8 tables migrated (users, agents, projects, tasks, messages, tool_results, agent_memory, app_connections)
+- Build: ✅ Passing on Vercel (commit 7822506)
+- Deploy: ✅ Production READY — auto-deploying via webhook
+- Git webhook: ✅ Working
+- MCP: ✅ Wired (Pipedream SDK)
+- DB: ✅ Neon PostgreSQL connected, 8 tables migrated
+- Browser: ✅ Browserbase + Playwright live (real cloud browser)
 - Auth: ⚠️ Demo credentials only
 
 ## 4. Architecture & Design Decisions
@@ -84,9 +85,10 @@
 - PIPEDREAM_PROJECT_ID: proj_ELs40WX ✅
 - PIPEDREAM_PROJECT_ENVIRONMENT: development ✅
 - GitHub PAT: stored in Claude session (not committed)
+- BROWSERBASE_API_KEY: Set on Vercel ✅
+- BROWSERBASE_PROJECT_ID: 5aa68d35-41f8-411c-b832-f1b446661002 ✅
 
 ## Credentials Still Needed
-- DATABASE_URL (PostgreSQL — Railway or Neon)
 - NEXTAUTH_SECRET
 - OpenAI API key (for DALL-E image generation)
 - Twilio SID + Token + Phone number
