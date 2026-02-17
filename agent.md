@@ -147,7 +147,15 @@
     - Green phone call card in chat UI
     - Settings: Twilio integration status
     - REQUIRES: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER in Vercel
-19. Mobile responsive layout
+19. ~~Mobile responsive layout~~ ✅ DONE
+    - Sidebar becomes drawer overlay on mobile (slide-in animation)
+    - Hamburger menu in mobile chat header
+    - Drawer auto-closes on chat selection / new chat
+    - Responsive chat header (hides step/model badges on small screens)
+    - Wider message bubbles on mobile (90% vs 80%)
+    - Settings/Import modals full-width on mobile
+    - iOS viewport config (no zoom, safe-area padding)
+    - 16px font inputs to prevent iOS zoom
 20. Auth improvements (real user accounts)
 
 ## Credentials Secured
@@ -161,10 +169,12 @@
 - BROWSERBASE_PROJECT_ID: 5aa68d35-41f8-411c-b832-f1b446661002 ✅
 - E2B_API_KEY: Set on Vercel ✅ (pending user adding to env vars)
 - DATABASE_URL: Neon PostgreSQL ✅
+- OPENAI_API_KEY: Set on Vercel ✅ (GPT-4o + DALL-E 3)
+- TWILIO_ACCOUNT_SID: Set on Vercel ✅
+- TWILIO_AUTH_TOKEN: Set on Vercel ✅
+- TWILIO_PHONE_NUMBER: Set on Vercel ✅
 
 ## Credentials Still Needed
 - NEXTAUTH_SECRET
-- OpenAI API key (for DALL-E image generation)
-- Twilio SID + Token + Phone number
 - Tavily or Exa API key (for Deep Research)
 - ElevenLabs API key (for voice calls)
