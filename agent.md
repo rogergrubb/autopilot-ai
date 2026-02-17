@@ -88,8 +88,16 @@
     - Knowledge tab: built-in product knowledge + upload placeholder
     - Skills tab: 10 agent capabilities listed
     - Agent switcher (Nova, Pixel, Scout)
-11. Phone calls (Twilio + ElevenLabs)
-12. Self-reflection reasoning loop (not just auto-continue)
+11. Phone calls (Twilio + ElevenLabs) — BLOCKED: needs API keys
+12. ~~Self-reflection reasoning loop~~ ✅ DONE
+    - selfReflect tool: evaluates progress, quality, gaps, confidence
+    - planNextSteps tool: decomposes goals into ordered steps
+    - System prompt updated with Self-Reflection Protocol
+    - Auto-continue triggers reflection first
+    - Purple/blue reflection cards in chat UI
+13. Wire Projects to database (persist across sessions)
+14. Knowledge base file upload (PDF, docs, links)
+15. Agent inbox / notifications
 
 ## Credentials Secured
 - GOOGLE_GENERATIVE_AI_API_KEY: Set on Vercel ✅

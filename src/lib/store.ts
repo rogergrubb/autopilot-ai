@@ -51,6 +51,7 @@ interface AppState {
   projects: Project[];
   activeProject: Project | null;
   setActiveProject: (project: Project | null) => void;
+  setProjects: (projects: Project[]) => void;
   addProject: (project: Project) => void;
 
   // Chat persistence
@@ -88,6 +89,7 @@ export const useAppStore = create<AppState>((set) => ({
   projects: [],
   activeProject: null,
   setActiveProject: (project) => set({ activeProject: project }),
+  setProjects: (projects) => set({ projects }),
   addProject: (project) =>
     set((s) => ({ projects: [...s.projects, project] })),
 

@@ -35,7 +35,7 @@ export function Sidebar() {
     chatHistory, setChatHistory, activeChatId, setActiveChatId,
     sidebarTab, setSidebarTab,
     selectedModel, setSelectedModel,
-    projects, addProject,
+    projects, addProject, setProjects,
   } = useAppStore();
 
   const [showModelPicker, setShowModelPicker] = useState(false);
@@ -51,7 +51,24 @@ export function Sidebar() {
         setChatHistory(data.chats || []);
       } catch {}
     })();
-  }, [setChatHistory]);
+    // Also load projects
+    (async () => {
+      try {
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        if (data.projects) {
+          setProjects(data.projects.map((p: { id: string; title: string; description: string | null; status: string | null }) => ({
+            id: p.id,
+            title: p.title,
+            description: p.description || '',
+            agentId: activeAgent?.id || 'default-strategist',
+            status: (p.status === 'completed' ? 'completed' : p.status === 'in_progress' ? 'in_progress' : 'pending') as 'pending' | 'in_progress' | 'completed',
+            progress: p.status === 'completed' ? 100 : p.status === 'in_progress' ? 50 : 0,
+          })));
+        }
+      } catch {}
+    })();
+  }, [setChatHistory, setProjects, activeAgent?.id]);
 
   const deleteChat = async (id: string) => {
     try {
@@ -63,16 +80,30 @@ export function Sidebar() {
 
   const startNewChat = () => { setActiveChatId(null); window.location.href = '/'; };
 
-  const createProject = () => {
+  const createProject = async () => {
     if (!newProjectTitle.trim()) return;
-    addProject({
-      id: `proj_${Date.now()}`,
-      title: newProjectTitle.trim(),
-      description: newProjectDesc.trim(),
-      agentId: activeAgent?.id || 'default-strategist',
-      status: 'pending',
-      progress: 0,
-    });
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newProjectTitle.trim(),
+          description: newProjectDesc.trim() || null,
+          goal: newProjectTitle.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.project) {
+        addProject({
+          id: data.project.id,
+          title: data.project.title,
+          description: data.project.description || '',
+          agentId: activeAgent?.id || 'default-strategist',
+          status: 'pending',
+          progress: 0,
+        });
+      }
+    } catch {}
     setNewProjectTitle('');
     setNewProjectDesc('');
     setShowNewProject(false);
@@ -241,15 +272,27 @@ export function Sidebar() {
                 )}
 
                 {projects.map((project) => (
-                  <div key={project.id} className="p-3 rounded-lg bg-white border border-[#e5e0d8] shadow-sm space-y-2 cursor-pointer hover:border-[#2d8a4e]/30 transition-all">
+                  <div key={project.id} className="group p-3 rounded-lg bg-white border border-[#e5e0d8] shadow-sm space-y-2 cursor-pointer hover:border-[#2d8a4e]/30 transition-all">
                     <div className="flex items-start justify-between">
                       <p className="text-xs font-medium text-[#1a1a1a] leading-tight">{project.title}</p>
-                      <span className={cn(
-                        'text-[9px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ml-2',
-                        project.status === 'completed' ? 'bg-green-100 text-green-700' :
-                        project.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-500'
-                      )}>{project.status.replace('_', ' ')}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                        <span className={cn(
+                          'text-[9px] px-1.5 py-0.5 rounded-full font-medium',
+                          project.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          project.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-500'
+                        )}>{project.status.replace('_', ' ')}</span>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try { await fetch(`/api/projects/${project.id}`, { method: 'DELETE' }); } catch {}
+                            setProjects(projects.filter(p => p.id !== project.id));
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-500 transition-all text-[#b5ae9e]"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                     {project.description && <p className="text-[10px] text-[#8a8478] line-clamp-2">{project.description}</p>}
                     <div className="w-full h-1 rounded-full bg-[#f0ece4]">
