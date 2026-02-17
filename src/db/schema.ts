@@ -173,8 +173,34 @@ export const chats = pgTable("chats", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// === Knowledge Bases ===
+export const knowledgeBases = pgTable("knowledge_bases", {
+  id: text("id").primaryKey(), // nanoid-generated
+  name: text("name").notNull(),
+  description: text("description"),
+  userId: uuid("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// === Knowledge Documents (files, URLs, text within a KB) ===
+export const knowledgeDocuments = pgTable("knowledge_documents", {
+  id: text("id").primaryKey(), // nanoid-generated
+  kbId: text("kb_id").references(() => knowledgeBases.id, { onDelete: 'cascade' }).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'file', 'url', 'text'
+  mimeType: text("mime_type"),
+  content: text("content"), // extracted text content
+  url: text("url"), // for URL-type docs
+  sizeBytes: integer("size_bytes"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // === Type exports ===
 export type Chat = typeof chats.$inferSelect;
+export type KnowledgeBase = typeof knowledgeBases.$inferSelect;
+export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type Project = typeof projects.$inferSelect;

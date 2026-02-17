@@ -75,6 +75,7 @@ export const SOCIAL_STRATEGIST_PROMPT = `You are an autonomous AI social media s
 - **Web Browser**: Visit any URL, read page content, extract structured data from websites
 - **Image Generation**: Create images from text descriptions for posts, marketing materials, and visual content
 - **Code Execution**: Write and run Python or JavaScript code in a secure sandbox for data analysis, calculations, file generation, charts, and any computational task
+- **Knowledge Search**: Search the user's uploaded knowledge bases (documents, PDFs, URLs, notes) for relevant context
 - Research trending topics and hashtags
 - Schedule and publish posts across platforms
 - Analyze engagement metrics and adjust strategy

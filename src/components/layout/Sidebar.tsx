@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Plus, MessageSquare, Trash2, Leaf,
   FolderOpen, BookOpen, Zap, Settings, ChevronDown, Globe, Code,
   Search, Image, Monitor, Calendar, Users, Hash, BarChart3,
-  Brain,
+  Brain, Upload, FileText, Link2, X, ChevronUp,
 } from 'lucide-react';
 
 const AVAILABLE_MODELS = [
@@ -43,6 +43,18 @@ export function Sidebar() {
   const [newProjectTitle, setNewProjectTitle] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
 
+  // Knowledge base state
+  interface KBItem { id: string; name: string; description: string | null; docCount: number; }
+  const [kbList, setKbList] = useState<KBItem[]>([]);
+  const [showNewKB, setShowNewKB] = useState(false);
+  const [newKBName, setNewKBName] = useState('');
+  const [expandedKB, setExpandedKB] = useState<string | null>(null);
+  const [uploadingTo, setUploadingTo] = useState<string | null>(null);
+  const [urlInput, setUrlInput] = useState('');
+  const [textInput, setTextInput] = useState('');
+  const [textName, setTextName] = useState('');
+  const [uploadMode, setUploadMode] = useState<'file' | 'url' | 'text'>('file');
+
   useEffect(() => {
     (async () => {
       try {
@@ -66,6 +78,14 @@ export function Sidebar() {
             progress: p.status === 'completed' ? 100 : p.status === 'in_progress' ? 50 : 0,
           })));
         }
+      } catch {}
+    })();
+    // Load knowledge bases
+    (async () => {
+      try {
+        const res = await fetch('/api/knowledge');
+        const data = await res.json();
+        if (data.knowledgeBases) setKbList(data.knowledgeBases);
       } catch {}
     })();
   }, [setChatHistory, setProjects, activeAgent?.id]);
@@ -107,6 +127,77 @@ export function Sidebar() {
     setNewProjectTitle('');
     setNewProjectDesc('');
     setShowNewProject(false);
+  };
+
+  const createKB = async () => {
+    if (!newKBName.trim()) return;
+    try {
+      const res = await fetch('/api/knowledge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newKBName.trim() }),
+      });
+      const data = await res.json();
+      if (data.knowledgeBase) {
+        setKbList(prev => [{ ...data.knowledgeBase, docCount: 0 }, ...prev]);
+      }
+    } catch {}
+    setNewKBName('');
+    setShowNewKB(false);
+  };
+
+  const deleteKB = async (id: string) => {
+    try { await fetch(`/api/knowledge/${id}`, { method: 'DELETE' }); } catch {}
+    setKbList(prev => prev.filter(kb => kb.id !== id));
+    if (expandedKB === id) setExpandedKB(null);
+  };
+
+  const uploadFile = async (kbId: string, file: File) => {
+    setUploadingTo(kbId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`/api/knowledge/${kbId}/documents`, { method: 'POST', body: formData });
+      if (res.ok) {
+        setKbList(prev => prev.map(kb => kb.id === kbId ? { ...kb, docCount: kb.docCount + 1 } : kb));
+      }
+    } catch {}
+    setUploadingTo(null);
+  };
+
+  const addUrl = async (kbId: string) => {
+    if (!urlInput.trim()) return;
+    setUploadingTo(kbId);
+    try {
+      const res = await fetch(`/api/knowledge/${kbId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'url', url: urlInput.trim() }),
+      });
+      if (res.ok) {
+        setKbList(prev => prev.map(kb => kb.id === kbId ? { ...kb, docCount: kb.docCount + 1 } : kb));
+      }
+    } catch {}
+    setUrlInput('');
+    setUploadingTo(null);
+  };
+
+  const addText = async (kbId: string) => {
+    if (!textInput.trim()) return;
+    setUploadingTo(kbId);
+    try {
+      const res = await fetch(`/api/knowledge/${kbId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'text', name: textName.trim() || 'Text Note', content: textInput.trim() }),
+      });
+      if (res.ok) {
+        setKbList(prev => prev.map(kb => kb.id === kbId ? { ...kb, docCount: kb.docCount + 1 } : kb));
+      }
+    } catch {}
+    setTextInput('');
+    setTextName('');
+    setUploadingTo(null);
   };
 
   const currentModel = AVAILABLE_MODELS.find(m => m.id === selectedModel) || AVAILABLE_MODELS[0];
@@ -306,17 +397,164 @@ export function Sidebar() {
             {/* KNOWLEDGE TAB */}
             {sidebarTab === 'knowledge' && (
               <div className="space-y-3">
-                <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#d4cec2] text-[#8a8478] hover:border-[#2d8a4e] hover:text-[#2d8a4e] transition-all text-xs">
+                <button
+                  onClick={() => setShowNewKB(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#d4cec2] text-[#8a8478] hover:border-[#2d8a4e] hover:text-[#2d8a4e] transition-all text-xs"
+                >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add Knowledge Base</span>
+                  <span>New Knowledge Base</span>
                 </button>
 
-                <div className="text-center py-4">
-                  <BookOpen className="w-8 h-8 text-[#d4cec2] mx-auto mb-2" />
-                  <p className="text-xs text-[#b5ae9e]">Upload docs, PDFs, or links</p>
-                  <p className="text-[10px] text-[#d4cec2] mt-1">so your agent can reference them</p>
-                </div>
+                {showNewKB && (
+                  <div className="p-3 rounded-lg bg-white border border-[#e5e0d8] shadow-sm space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Knowledge base name..."
+                      value={newKBName}
+                      onChange={(e) => setNewKBName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && createKB()}
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-[#e5e0d8] focus:outline-none focus:border-[#2d8a4e] bg-[#faf8f5]"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={createKB} className="flex-1 px-2.5 py-1.5 rounded-md bg-[#2d8a4e] text-white text-xs font-medium hover:bg-[#247a42]">Create</button>
+                      <button onClick={() => setShowNewKB(false)} className="px-2.5 py-1.5 rounded-md text-[#8a8478] text-xs hover:bg-[#f0ece4]">Cancel</button>
+                    </div>
+                  </div>
+                )}
 
+                {/* User Knowledge Bases */}
+                {kbList.map((kb) => (
+                  <div key={kb.id} className="rounded-lg bg-white border border-[#e5e0d8] shadow-sm overflow-hidden">
+                    <div
+                      className="group flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#faf8f5] transition-all"
+                      onClick={() => setExpandedKB(expandedKB === kb.id ? null : kb.id)}
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-[#2d8a4e] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-[#1a1a1a] truncate">{kb.name}</p>
+                        <p className="text-[10px] text-[#b5ae9e]">{kb.docCount} doc{kb.docCount !== 1 ? 's' : ''}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteKB(kb.id); }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-500 text-[#b5ae9e] transition-all"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                      {expandedKB === kb.id ? <ChevronUp className="w-3 h-3 text-[#b5ae9e]" /> : <ChevronDown className="w-3 h-3 text-[#b5ae9e]" />}
+                    </div>
+
+                    {expandedKB === kb.id && (
+                      <div className="border-t border-[#e5e0d8] p-2 space-y-2">
+                        {/* Upload mode selector */}
+                        <div className="flex gap-1">
+                          {[
+                            { mode: 'file' as const, icon: Upload, label: 'File' },
+                            { mode: 'url' as const, icon: Link2, label: 'URL' },
+                            { mode: 'text' as const, icon: FileText, label: 'Text' },
+                          ].map(({ mode, icon: Icon, label }) => (
+                            <button
+                              key={mode}
+                              onClick={() => setUploadMode(mode)}
+                              className={cn(
+                                'flex-1 flex items-center justify-center gap-1 py-1 rounded text-[10px] font-medium transition-all',
+                                uploadMode === mode
+                                  ? 'bg-[#2d8a4e]/10 text-[#2d8a4e] border border-[#2d8a4e]/20'
+                                  : 'text-[#b5ae9e] hover:text-[#8a8478] border border-transparent'
+                              )}
+                            >
+                              <Icon className="w-3 h-3" />
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* File upload */}
+                        {uploadMode === 'file' && (
+                          <label className="block cursor-pointer">
+                            <div className={cn(
+                              "flex items-center justify-center gap-1.5 py-3 rounded-md border border-dashed text-[10px] transition-all",
+                              uploadingTo === kb.id
+                                ? 'border-[#2d8a4e] text-[#2d8a4e] bg-[#2d8a4e]/5'
+                                : 'border-[#d4cec2] text-[#8a8478] hover:border-[#2d8a4e] hover:text-[#2d8a4e]'
+                            )}>
+                              <Upload className="w-3 h-3" />
+                              {uploadingTo === kb.id ? 'Uploading...' : 'Drop file or click to upload'}
+                            </div>
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept=".txt,.md,.csv,.json,.html,.pdf,.py,.js,.ts,.xml,.yaml,.yml,.toml,.log"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) uploadFile(kb.id, f);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        )}
+
+                        {/* URL input */}
+                        {uploadMode === 'url' && (
+                          <div className="flex gap-1">
+                            <input
+                              type="url"
+                              placeholder="https://..."
+                              value={urlInput}
+                              onChange={(e) => setUrlInput(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && addUrl(kb.id)}
+                              className="flex-1 px-2 py-1.5 text-[10px] rounded-md border border-[#e5e0d8] focus:outline-none focus:border-[#2d8a4e] bg-[#faf8f5]"
+                            />
+                            <button
+                              onClick={() => addUrl(kb.id)}
+                              disabled={!urlInput.trim() || uploadingTo === kb.id}
+                              className="px-2 py-1.5 rounded-md bg-[#2d8a4e] text-white text-[10px] font-medium hover:bg-[#247a42] disabled:opacity-50"
+                            >
+                              {uploadingTo === kb.id ? '...' : 'Add'}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Text input */}
+                        {uploadMode === 'text' && (
+                          <div className="space-y-1">
+                            <input
+                              type="text"
+                              placeholder="Note title"
+                              value={textName}
+                              onChange={(e) => setTextName(e.target.value)}
+                              className="w-full px-2 py-1 text-[10px] rounded-md border border-[#e5e0d8] focus:outline-none focus:border-[#2d8a4e] bg-[#faf8f5]"
+                            />
+                            <textarea
+                              placeholder="Paste knowledge text..."
+                              value={textInput}
+                              onChange={(e) => setTextInput(e.target.value)}
+                              rows={3}
+                              className="w-full px-2 py-1 text-[10px] rounded-md border border-[#e5e0d8] focus:outline-none focus:border-[#2d8a4e] bg-[#faf8f5] resize-none"
+                            />
+                            <button
+                              onClick={() => addText(kb.id)}
+                              disabled={!textInput.trim() || uploadingTo === kb.id}
+                              className="w-full py-1.5 rounded-md bg-[#2d8a4e] text-white text-[10px] font-medium hover:bg-[#247a42] disabled:opacity-50"
+                            >
+                              {uploadingTo === kb.id ? 'Saving...' : 'Save Note'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {kbList.length === 0 && !showNewKB && (
+                  <div className="text-center py-4">
+                    <BookOpen className="w-8 h-8 text-[#d4cec2] mx-auto mb-2" />
+                    <p className="text-xs text-[#b5ae9e]">Upload docs, PDFs, or links</p>
+                    <p className="text-[10px] text-[#d4cec2] mt-1">so your agent can reference them</p>
+                  </div>
+                )}
+
+                {/* Built-in product knowledge */}
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-[#b5ae9e] px-2 mb-1.5 font-medium">Built-in Knowledge</p>
                   {[
