@@ -160,10 +160,32 @@ export async function postToTwitter(content: string): Promise<PostResult> {
 }
 
 /**
+ * Extract a numeric Facebook Page ID from various formats:
+ * - Plain numeric ID: "61588134012621"
+ * - URL with id param: "https://www.facebook.com/profile.php?id=61588134012621"
+ * - URL with page name: "https://www.facebook.com/somePageName"
+ */
+function extractFacebookPageId(input?: string): string | undefined {
+  if (!input) return undefined;
+  const trimmed = input.trim();
+  // Pure numeric ID
+  if (/^\d+$/.test(trimmed)) return trimmed;
+  // URL with ?id= parameter  
+  const idMatch = trimmed.match(/[?&]id=(\d+)/);
+  if (idMatch) return idMatch[1];
+  // Try to extract trailing numeric path segment
+  const pathMatch = trimmed.match(/facebook\.com\/(\d+)/);
+  if (pathMatch) return pathMatch[1];
+  // Return as-is (might be a page slug)
+  return trimmed;
+}
+
+/**
  * Post to Facebook Page
  */
 export async function postToFacebook(content: string, pageId?: string): Promise<PostResult> {
   const platform = SOCIAL_PLATFORMS.facebook;
+  const resolvedPageId = extractFacebookPageId(pageId);
   try {
     const account = await getConnectedAccount(platform.appSlug);
     if (!account) {
@@ -183,14 +205,14 @@ export async function postToFacebook(content: string, pageId?: string): Promise<
       configuredProps: {
         facebook_pages: { authProvisionId: account.id },
         message: content,
-        ...(pageId && { page: pageId }),
+        ...(resolvedPageId && { page: resolvedPageId }),
       },
     });
 
     return {
       status: 'posted',
       platform: 'facebook',
-      message: `Successfully posted to Facebook Page`,
+      message: `Successfully posted to Facebook Page${resolvedPageId ? ` (ID: ${resolvedPageId})` : ''}`,
       data: result,
     };
   } catch (error: unknown) {

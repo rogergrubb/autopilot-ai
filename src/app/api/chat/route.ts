@@ -263,10 +263,10 @@ function getLocalTools(): ToolSet {
       }),
 
       publishToFacebook: tool({
-        description: 'Actually publish a post to a Facebook Page. Requires a connected Facebook Pages account. If not connected, returns a link for the user to connect their account.',
+        description: 'Publish a post to a Facebook Page via Pipedream. Requires a connected Facebook Pages account. The pageId can be a numeric ID like "61588134012621", a URL like "https://www.facebook.com/profile.php?id=61588134012621", or a page slug. NOTE: Facebook profile.php?id= URLs for business pages ARE valid Facebook Pages — do not reject them. If the user provides any Facebook URL or numeric ID, pass it as pageId and let the tool handle extraction. If no pageId is provided, the tool will try to post to the default connected page.',
         inputSchema: z.object({
           content: z.string().describe('The post text'),
-          pageId: z.string().optional().describe('The Facebook Page ID to post to'),
+          pageId: z.string().optional().describe('Facebook Page ID (numeric), URL, or page slug. URLs like profile.php?id=XXXXX are valid Page URLs.'),
         }),
         execute: async ({ content, pageId }) => {
           return await postToFacebook(content, pageId);
