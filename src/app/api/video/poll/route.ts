@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFileSync, unlinkSync, existsSync } from 'fs';
+import { readFileSync, unlinkSync, existsSync, writeFileSync } from 'fs';
 import { randomUUID } from 'crypto';
 
 export const maxDuration = 60;
 
 interface VideoPollRequest {
   operationName: string;
-  // If done, also generate voiceover
   voiceoverScript?: string;
   voice?: string;
 }
@@ -24,22 +23,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY not set' }, { status: 500 });
     }
 
-    const { GoogleGenAI } = await import('@google/genai');
-    const ai = new GoogleGenAI({ apiKey });
+    // Poll using REST API directly (SDK method doesn't work with deserialized operation names)
+    const pollUrl = `https://generativelanguage.googleapis.com/v1beta/${body.operationName}`;
+    console.log(`[Veo Poll] Checking: ${pollUrl}`);
 
-    // Poll the operation
-    console.log(`[Veo Poll] Checking operation: ${body.operationName}`);
-
-    const operation = await ai.operations.getVideosOperation({
-      operation: { name: body.operationName } as Parameters<typeof ai.operations.getVideosOperation>[0]['operation'],
+    const pollResponse = await fetch(pollUrl, {
+      headers: { 'X-goog-api-key': apiKey },
     });
+
+    if (!pollResponse.ok) {
+      const errorText = await pollResponse.text();
+      console.error(`[Veo Poll] API error ${pollResponse.status}: ${errorText}`);
+      return NextResponse.json({
+        status: 'error',
+        error: `Veo API error (${pollResponse.status}): ${errorText}`,
+      }, { status: 500 });
+    }
+
+    const operation = await pollResponse.json();
+    console.log(`[Veo Poll] Operation done: ${operation.done}, has response: ${!!operation.response}`);
 
     if (!operation.done) {
       return NextResponse.json({
         status: 'processing',
         operationName: body.operationName,
         done: false,
-        message: 'Video is still generating. Poll again in 10 seconds.',
+        message: 'Video is still generating. Poll again in 10-15 seconds.',
       });
     }
 
@@ -54,8 +63,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the generated video
-    const response = operation.response;
-    if (!response?.generatedVideos?.length) {
+    const generatedVideos = operation.response?.generatedVideos;
+    if (!generatedVideos?.length) {
       return NextResponse.json({
         status: 'error',
         done: true,
@@ -63,15 +72,41 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    const generatedVideo = response.generatedVideos[0];
+    const videoInfo = generatedVideos[0];
+    
+    // Download the video using the SDK (handles auth properly)
+    const { GoogleGenAI } = await import('@google/genai');
+    const ai = new GoogleGenAI({ apiKey });
     const tmpPath = `/tmp/veo_${randomUUID()}.mp4`;
 
     try {
-      console.log(`[Veo Poll] Downloading video to ${tmpPath}...`);
-      await ai.files.download({
-        file: generatedVideo.video!,
-        downloadPath: tmpPath,
-      });
+      console.log(`[Veo Poll] Downloading video...`, JSON.stringify(videoInfo.video || {}).substring(0, 200));
+      
+      // Try SDK download first
+      try {
+        await ai.files.download({
+          file: videoInfo.video,
+          downloadPath: tmpPath,
+        });
+      } catch (downloadErr) {
+        // If SDK download fails, try direct URI fetch
+        console.log(`[Veo Poll] SDK download failed, trying direct URI...`, downloadErr);
+        const videoUri = videoInfo.video?.uri;
+        if (!videoUri) {
+          throw new Error('No video URI available for download');
+        }
+        
+        const videoFetch = await fetch(videoUri, {
+          headers: { 'X-goog-api-key': apiKey },
+        });
+        
+        if (!videoFetch.ok) {
+          throw new Error(`Direct video download failed: ${videoFetch.status}`);
+        }
+        
+        const videoBuffer = Buffer.from(await videoFetch.arrayBuffer());
+        writeFileSync(tmpPath, videoBuffer);
+      }
 
       const videoData = readFileSync(tmpPath);
       console.log(`[Veo Poll] Video downloaded: ${videoData.length} bytes`);
