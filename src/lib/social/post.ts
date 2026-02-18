@@ -6,6 +6,7 @@
 import { pdClient } from '@/lib/pd-client';
 import { SOCIAL_PLATFORMS, EXTERNAL_USER_ID } from '@/lib/social/config';
 import { postTweet, isTwitterDirectConfigured } from '@/lib/social/twitter-direct';
+import { postToFacebookPage, isFacebookDirectConfigured } from '@/lib/social/facebook-direct';
 
 interface PostResult {
   status: 'posted' | 'needs_connection' | 'error';
@@ -181,9 +182,38 @@ function extractFacebookPageId(input?: string): string | undefined {
 }
 
 /**
- * Post to Facebook Page
+ * Post to Facebook Page — uses direct Graph API when credentials are configured,
+ * falls back to Pipedream Connect otherwise.
  */
 export async function postToFacebook(content: string, pageId?: string): Promise<PostResult> {
+  // Prefer direct API (bypasses Pipedream OAuth token issues)
+  if (isFacebookDirectConfigured()) {
+    try {
+      const result = await postToFacebookPage(content);
+      if (result.success) {
+        return {
+          status: 'posted',
+          platform: 'facebook',
+          message: `Successfully posted to Facebook Page. View at: ${result.postUrl}`,
+          data: { postId: result.postId, postUrl: result.postUrl },
+        };
+      } else {
+        return {
+          status: 'error',
+          platform: 'facebook',
+          message: `Failed to post to Facebook: ${result.error}`,
+        };
+      }
+    } catch (error: unknown) {
+      return {
+        status: 'error',
+        platform: 'facebook',
+        message: `Failed to post to Facebook: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  // Fallback to Pipedream Connect
   const platform = SOCIAL_PLATFORMS.facebook;
   const resolvedPageId = extractFacebookPageId(pageId);
   try {
