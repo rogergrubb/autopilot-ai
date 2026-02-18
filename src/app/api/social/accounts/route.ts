@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pdClient } from '@/lib/pd-client';
 import { SOCIAL_PLATFORMS, EXTERNAL_USER_ID } from '@/lib/social/config';
+import { isTwitterDirectConfigured } from '@/lib/social/twitter-direct';
 
 export const maxDuration = 15;
 
@@ -22,6 +23,19 @@ export async function GET() {
 
     // Map platform config to connection status
     const accounts = Object.values(SOCIAL_PLATFORMS).map((platform) => {
+      // Twitter uses direct API when configured
+      if (platform.id === 'twitter' && isTwitterDirectConfigured()) {
+        return {
+          platform: platform.id,
+          name: platform.name,
+          icon: platform.icon,
+          color: platform.color,
+          connected: true,
+          accountId: 'direct-api',
+          accountName: 'Connected (Direct API)',
+        };
+      }
+
       const connected = connectedAccounts?.find(
         (acc) => acc.app?.nameSlug === platform.appSlug
       );
@@ -41,15 +55,15 @@ export async function GET() {
     const err = error as Error;
     console.error('[Social] Accounts list error:', err.message);
     
-    // Return all platforms as disconnected if SDK fails
+    // Return all platforms as disconnected if SDK fails (except Twitter direct)
     const accounts = Object.values(SOCIAL_PLATFORMS).map((platform) => ({
       platform: platform.id,
       name: platform.name,
       icon: platform.icon,
       color: platform.color,
-      connected: false,
-      accountId: null,
-      accountName: null,
+      connected: platform.id === 'twitter' && isTwitterDirectConfigured(),
+      accountId: platform.id === 'twitter' && isTwitterDirectConfigured() ? 'direct-api' : null,
+      accountName: platform.id === 'twitter' && isTwitterDirectConfigured() ? 'Connected (Direct API)' : null,
     }));
     
     return NextResponse.json({ accounts, error: err.message });

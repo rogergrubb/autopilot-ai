@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pdClient } from '@/lib/pd-client';
 import { SOCIAL_PLATFORMS, EXTERNAL_USER_ID } from '@/lib/social/config';
+import { postTweet, isTwitterDirectConfigured } from '@/lib/social/twitter-direct';
 
 export const maxDuration = 30;
 
@@ -39,6 +40,27 @@ export async function POST(req: Request) {
         { error: 'Content is required' },
         { status: 400 }
       );
+    }
+
+    // Direct Twitter integration (bypasses Pipedream)
+    if (platform === 'twitter' && isTwitterDirectConfigured()) {
+      console.log('[Social] Using direct Twitter API');
+      const result = await postTweet(content);
+      if (result.success) {
+        return NextResponse.json({
+          success: true,
+          platform: 'Twitter/X',
+          result: {
+            tweetId: result.tweetId,
+            tweetUrl: result.tweetUrl,
+          },
+        });
+      } else {
+        return NextResponse.json(
+          { error: result.error },
+          { status: 500 }
+        );
+      }
     }
 
     const client = pdClient();

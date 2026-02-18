@@ -5,6 +5,7 @@
 
 import { pdClient } from '@/lib/pd-client';
 import { SOCIAL_PLATFORMS, EXTERNAL_USER_ID } from '@/lib/social/config';
+import { postTweet, isTwitterDirectConfigured } from '@/lib/social/twitter-direct';
 
 interface PostResult {
   status: 'posted' | 'needs_connection' | 'error';
@@ -88,9 +89,38 @@ export async function postToReddit(subreddit: string, title: string, content: st
 }
 
 /**
- * Post to Twitter/X
+ * Post to Twitter/X — uses direct API when credentials are configured,
+ * falls back to Pipedream Connect otherwise.
  */
 export async function postToTwitter(content: string): Promise<PostResult> {
+  // Prefer direct API (bypasses Pipedream OAuth issues with X Free tier)
+  if (isTwitterDirectConfigured()) {
+    try {
+      const result = await postTweet(content);
+      if (result.success) {
+        return {
+          status: 'posted',
+          platform: 'twitter',
+          message: `Successfully tweeted (${content.length} chars). View at: ${result.tweetUrl}`,
+          data: { tweetId: result.tweetId, tweetUrl: result.tweetUrl },
+        };
+      } else {
+        return {
+          status: 'error',
+          platform: 'twitter',
+          message: `Failed to tweet: ${result.error}`,
+        };
+      }
+    } catch (error: unknown) {
+      return {
+        status: 'error',
+        platform: 'twitter',
+        message: `Failed to tweet: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  // Fallback to Pipedream Connect
   const platform = SOCIAL_PLATFORMS.twitter;
   try {
     const account = await getConnectedAccount(platform.appSlug);

@@ -74,6 +74,9 @@ importers:
       twilio:
         specifier: ^5.12.1
         version: 5.12.1
+      twitter-api-v2:
+        specifier: ^1.29.0
+        version: 1.29.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -2977,6 +2980,9 @@ packages:
   twilio@5.12.1:
     resolution: {integrity: sha512-EhgWS5o+JWqMEl0KgUaN1oAym2Pr7LYYiIlwQdx+u+vACBdwHRzhHAQD6TRKFMciNUTzgBi266ZNpYbFhnEykQ==}
     engines: {node: '>=14.0'}
+
+  twitter-api-v2@1.29.0:
+    resolution: {integrity: sha512-v473q5bwme4N+DWSg6qY+JCvfg1nSJRWwui3HUALafxfqCvVkKiYmS/5x/pVeJwTmyeBxexMbzHwnzrH4h6oYQ==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -5983,6 +5989,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
+
+  twitter-api-v2@1.29.0: {}
 
   type-check@0.4.0:
     dependencies:
