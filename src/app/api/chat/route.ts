@@ -286,35 +286,77 @@ function getLocalTools(): ToolSet {
     } : {}),
 
     // ── Video Generation Tools ────────────────────────────────────────────
-    generateMarketingVideo: tool({
-      description: 'Generate a short-form marketing video using AI (Veo). Creates 8-second 9:16 portrait videos perfect for YouTube Shorts, TikTok, and Instagram Reels. The video includes AI-generated audio. Returns video metadata and a downloadable link.',
+    startVideoGeneration: tool({
+      description: 'Start generating a short-form marketing video using AI (Veo 3.1). This starts an async operation that takes 1-6 minutes. Returns an operationName that you MUST pass to checkVideoStatus to poll for completion. Call checkVideoStatus every 15 seconds until done.',
       inputSchema: z.object({
-        videoPrompt: z.string().describe('Detailed prompt describing the video scene, style, camera angles, and motion. Be specific and cinematic.'),
+        prompt: z.string().describe('Detailed prompt describing the video scene, style, camera angles, and motion. Be specific and cinematic.'),
+        aspectRatio: z.enum(['9:16', '16:9']).optional().describe('9:16 for shorts/reels (default), 16:9 for landscape'),
+        resolution: z.enum(['720p', '1080p']).optional().describe('Video resolution (default 720p)'),
+        voiceoverScript: z.string().optional().describe('Narration script for 11Labs voiceover (generated when video is ready)'),
+        voice: z.enum(['rachel', 'drew', 'clyde', 'domi', 'dave', 'fin', 'sarah', 'adam', 'sam']).optional().describe('Voice for voiceover'),
         title: z.string().optional().describe('Title for the video'),
         description: z.string().optional().describe('Description/caption for the video'),
-        tags: z.array(z.string()).optional().describe('Tags/hashtags for the video'),
-        aspectRatio: z.enum(['9:16', '16:9']).optional().describe('9:16 for shorts/reels (default), 16:9 for landscape'),
       }),
-      execute: async ({ videoPrompt, title, description, tags, aspectRatio }) => {
+      execute: async ({ prompt, aspectRatio, resolution, voiceoverScript, voice, title, description }) => {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://doanything-clone.vercel.app'}/api/video/generate`, {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://doanything-clone.vercel.app';
+          const response = await fetch(`${baseUrl}/api/video/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ videoPrompt, title, description, tags, aspectRatio }),
+            body: JSON.stringify({ prompt, aspectRatio, resolution, voiceoverScript, voice, title, description }),
           });
           const result = await response.json();
-          if (!response.ok) return { error: result.error || 'Video generation failed' };
-          // Don't return the full base64 to the model - just metadata
+          if (!response.ok) return { error: result.error || 'Failed to start video generation', details: result.details };
           return {
             success: true,
-            video: result.video,
-            voiceover: result.voiceover,
-            steps: result.steps,
-            metadata: result.metadata,
-            message: `Video generated successfully! ${result.video?.size ? Math.round(result.video.size / 1024) + 'KB' : ''} video ready.`,
+            operationName: result.operationName,
+            model: result.model,
+            config: result.config,
+            message: `Video generation started with ${result.model}. Operation: ${result.operationName}. This takes 1-6 minutes. Use checkVideoStatus with this operationName to poll for completion.`,
           };
         } catch (err: unknown) {
-          return { error: err instanceof Error ? err.message : 'Video generation failed' };
+          return { error: err instanceof Error ? err.message : 'Failed to start video generation' };
+        }
+      },
+    }),
+
+    checkVideoStatus: tool({
+      description: 'Check the status of an async Veo video generation. Call this with the operationName from startVideoGeneration. If status is "processing", wait ~15 seconds and call again. If status is "complete", the video is ready.',
+      inputSchema: z.object({
+        operationName: z.string().describe('The operation name returned by startVideoGeneration'),
+        voiceoverScript: z.string().optional().describe('Narration script for voiceover (only processed when video is complete)'),
+        voice: z.string().optional().describe('Voice for voiceover'),
+      }),
+      execute: async ({ operationName, voiceoverScript, voice }) => {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://doanything-clone.vercel.app';
+          const response = await fetch(`${baseUrl}/api/video/poll`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operationName, voiceoverScript, voice }),
+          });
+          const result = await response.json();
+          if (!response.ok && result.status !== 'processing') {
+            return { error: result.error || 'Video poll failed' };
+          }
+          if (result.status === 'processing') {
+            return {
+              status: 'processing',
+              operationName,
+              message: 'Video is still generating. Call checkVideoStatus again in ~15 seconds.',
+            };
+          }
+          // Complete! Return metadata (not the full base64)
+          return {
+            status: 'complete',
+            operationName,
+            video: { size: result.video?.size, mimeType: result.video?.mimeType },
+            voiceover: result.voiceover ? { size: result.voiceover.size } : undefined,
+            voiceoverError: result.voiceoverError,
+            message: `Video generated! ${result.video?.size ? Math.round(result.video.size / 1024) + 'KB' : 'Ready'}. ${result.voiceover ? 'Voiceover also generated.' : ''}`,
+          };
+        } catch (err: unknown) {
+          return { error: err instanceof Error ? err.message : 'Failed to check video status' };
         }
       },
     }),
