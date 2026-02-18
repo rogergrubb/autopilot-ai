@@ -14,6 +14,10 @@ export async function GET() {
       PIPEDREAM_CLIENT_SECRET: process.env.PIPEDREAM_CLIENT_SECRET ? 'SET' : 'NOT SET',
       PIPEDREAM_PROJECT_ID: process.env.PIPEDREAM_PROJECT_ID ? 'SET' : 'NOT SET',
       DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+      TWITTER_CONSUMER_KEY: process.env.TWITTER_CONSUMER_KEY ? `SET (${process.env.TWITTER_CONSUMER_KEY.length} chars)` : 'NOT SET',
+      TWITTER_CONSUMER_SECRET: process.env.TWITTER_CONSUMER_SECRET ? `SET (${process.env.TWITTER_CONSUMER_SECRET.length} chars)` : 'NOT SET',
+      TWITTER_ACCESS_TOKEN: process.env.TWITTER_ACCESS_TOKEN ? `SET (${process.env.TWITTER_ACCESS_TOKEN.length} chars)` : 'NOT SET',
+      TWITTER_ACCESS_TOKEN_SECRET: process.env.TWITTER_ACCESS_TOKEN_SECRET ? `SET (${process.env.TWITTER_ACCESS_TOKEN_SECRET.length} chars)` : 'NOT SET',
     },
   };
 
@@ -48,6 +52,22 @@ export async function GET() {
       status: 'ERROR',
       message: err.message,
     };
+  }
+
+  // Test Twitter Direct API
+  try {
+    const { verifyTwitterCredentials, isTwitterDirectConfigured } = await import('@/lib/social/twitter-direct');
+    if (isTwitterDirectConfigured()) {
+      const result = await verifyTwitterCredentials();
+      diagnostics.twitter = result.valid 
+        ? { status: 'OK', username: result.username }
+        : { status: 'ERROR', message: result.error };
+    } else {
+      diagnostics.twitter = { status: 'NOT_CONFIGURED' };
+    }
+  } catch (error: unknown) {
+    const err = error as Error;
+    diagnostics.twitter = { status: 'ERROR', message: err.message };
   }
 
   return Response.json(diagnostics, { status: 200 });
