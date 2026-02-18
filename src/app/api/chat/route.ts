@@ -299,7 +299,7 @@ function getLocalTools(): ToolSet {
       }),
       execute: async ({ prompt, aspectRatio, resolution, voiceoverScript, voice, title, description }) => {
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://doanything-clone.vercel.app';
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://autopilot-ai.vercel.app';
           const response = await fetch(`${baseUrl}/api/video/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -329,7 +329,7 @@ function getLocalTools(): ToolSet {
       }),
       execute: async ({ operationName, voiceoverScript, voice }) => {
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://doanything-clone.vercel.app';
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://autopilot-ai.vercel.app';
           const response = await fetch(`${baseUrl}/api/video/poll`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -35,7 +35,7 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-500/20">
             <Zap className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">DoAnything AI</h1>
+          <h1 className="text-2xl font-bold text-white">AutoPilot AI</h1>
           <p className="text-zinc-400 text-sm mt-1">
             Sign in to your agent workspace
           </p>

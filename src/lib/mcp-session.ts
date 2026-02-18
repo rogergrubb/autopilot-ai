@@ -53,7 +53,7 @@ export class MCPSessionManager {
         );
 
         this.client = new MCPClient(
-          { name: 'DoAnything-Agent', version: '1.0.0' },
+          { name: 'AutoPilot-Agent', version: '1.0.0' },
           { capabilities: {} }
         );
 

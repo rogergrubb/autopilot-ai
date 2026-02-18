@@ -249,7 +249,7 @@ export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
               <Leaf className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-[#1a1a1a]">DoAnything</h1>
+              <h1 className="text-sm font-bold text-[#1a1a1a]">AutoPilot AI</h1>
               <p className="text-[10px] text-[#8a8478]">by NumberOneSon</p>
             </div>
           </div>

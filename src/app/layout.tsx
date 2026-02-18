@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "DoAnything | Autonomous AI Agents",
+  title: "AutoPilot AI | Autonomous AI Agents",
   description: "AI agents that autonomously run your social media strategy and grow your following",
 };
 

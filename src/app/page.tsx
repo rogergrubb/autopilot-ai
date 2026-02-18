@@ -44,7 +44,7 @@ export default function Home() {
             <div className="w-6 h-6 rounded-md bg-[#2d8a4e] flex items-center justify-center">
               <span className="text-white text-xs font-bold">D</span>
             </div>
-            <span className="text-sm font-semibold text-[#1a1a1a]">DoAnything</span>
+            <span className="text-sm font-semibold text-[#1a1a1a]">AutoPilot AI</span>
           </div>
         </div>
         <div className="flex-1 min-h-0">
