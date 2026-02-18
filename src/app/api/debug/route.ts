@@ -18,6 +18,7 @@ export async function GET() {
       TWITTER_CONSUMER_SECRET: process.env.TWITTER_CONSUMER_SECRET ? `SET (${process.env.TWITTER_CONSUMER_SECRET.length} chars)` : 'NOT SET',
       TWITTER_ACCESS_TOKEN: process.env.TWITTER_ACCESS_TOKEN ? `SET (${process.env.TWITTER_ACCESS_TOKEN.length} chars)` : 'NOT SET',
       TWITTER_ACCESS_TOKEN_SECRET: process.env.TWITTER_ACCESS_TOKEN_SECRET ? `SET (${process.env.TWITTER_ACCESS_TOKEN_SECRET.length} chars)` : 'NOT SET',
+      ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY ? `SET (${process.env.ELEVENLABS_API_KEY.length} chars)` : 'NOT SET',
     },
   };
 

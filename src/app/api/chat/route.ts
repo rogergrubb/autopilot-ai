@@ -12,6 +12,7 @@ import { sendNotification } from '@/lib/tools/notifications';
 import { makePhoneCall } from '@/lib/tools/phone-call';
 import { createAutonomousTask, checkTaskStatus } from '@/lib/tools/autonomous-task';
 import { postToReddit, postToTwitter, postToFacebook, postToLinkedIn } from '@/lib/social/post';
+import type { VoiceName } from '@/lib/video/elevenlabs';
 import { db } from '@/db';
 import { userMemories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -283,6 +284,63 @@ function getLocalTools(): ToolSet {
         },
       }),
     } : {}),
+
+    // ── Video Generation Tools ────────────────────────────────────────────
+    generateMarketingVideo: tool({
+      description: 'Generate a short-form marketing video using AI (Veo). Creates 8-second 9:16 portrait videos perfect for YouTube Shorts, TikTok, and Instagram Reels. The video includes AI-generated audio. Returns video metadata and a downloadable link.',
+      inputSchema: z.object({
+        videoPrompt: z.string().describe('Detailed prompt describing the video scene, style, camera angles, and motion. Be specific and cinematic.'),
+        title: z.string().optional().describe('Title for the video'),
+        description: z.string().optional().describe('Description/caption for the video'),
+        tags: z.array(z.string()).optional().describe('Tags/hashtags for the video'),
+        aspectRatio: z.enum(['9:16', '16:9']).optional().describe('9:16 for shorts/reels (default), 16:9 for landscape'),
+      }),
+      execute: async ({ videoPrompt, title, description, tags, aspectRatio }) => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://doanything-clone.vercel.app'}/api/video/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoPrompt, title, description, tags, aspectRatio }),
+          });
+          const result = await response.json();
+          if (!response.ok) return { error: result.error || 'Video generation failed' };
+          // Don't return the full base64 to the model - just metadata
+          return {
+            success: true,
+            video: result.video,
+            voiceover: result.voiceover,
+            steps: result.steps,
+            metadata: result.metadata,
+            message: `Video generated successfully! ${result.video?.size ? Math.round(result.video.size / 1024) + 'KB' : ''} video ready.`,
+          };
+        } catch (err: unknown) {
+          return { error: err instanceof Error ? err.message : 'Video generation failed' };
+        }
+      },
+    }),
+
+    generateVoiceover: tool({
+      description: 'Generate a professional AI voiceover using 11Labs. Creates high-quality narration audio from text. Great for video narration, podcast intros, or audio content.',
+      inputSchema: z.object({
+        text: z.string().describe('The text to convert to speech'),
+        voice: z.enum(['rachel', 'drew', 'clyde', 'domi', 'dave', 'fin', 'sarah', 'adam', 'sam']).optional()
+          .describe('Voice to use. adam=deep narrator (default), rachel=calm female, drew=confident male, sarah=soft female'),
+      }),
+      execute: async ({ text, voice }) => {
+        try {
+          const { generateVoiceover } = await import('@/lib/video/elevenlabs');
+          const audio = await generateVoiceover({ text, voice: voice as VoiceName });
+          return {
+            success: true,
+            audioSize: audio.length,
+            voice: voice || 'adam',
+            message: `Voiceover generated: ${Math.round(audio.length / 1024)}KB audio file`,
+          };
+        } catch (err: unknown) {
+          return { error: err instanceof Error ? err.message : 'Voiceover generation failed' };
+        }
+      },
+    }),
   };
 }
 
