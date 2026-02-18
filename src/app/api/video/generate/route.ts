@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       prompt: body.videoPrompt,
       aspectRatio: body.aspectRatio || '9:16',
       resolution: body.resolution || '720p',
-      generateAudio: true,
+      negativePrompt: 'low quality, blurry, distorted',
     });
     
     // Convert to base64 for transport

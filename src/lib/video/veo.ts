@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
-import type { GenerateVideosOperation } from '@google/genai';
+import { readFileSync, unlinkSync, existsSync } from 'fs';
+import { randomUUID } from 'crypto';
 
 const getClient = () => {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -10,9 +11,8 @@ const getClient = () => {
 export interface VeoVideoOptions {
   prompt: string;
   aspectRatio?: '16:9' | '9:16'; // landscape or portrait (shorts)
-  resolution?: '720p' | '1080p';
-  durationSeconds?: number; // up to 8
-  generateAudio?: boolean;
+  resolution?: '720p' | '1080p' | '4k';
+  durationSeconds?: 4 | 6 | 8;
   negativePrompt?: string;
 }
 
@@ -22,82 +22,95 @@ export interface VeoVideoResult {
   durationSeconds: number;
 }
 
+// Model fallback chain
+const VEO_MODELS = [
+  'veo-3.1-generate-preview',
+  'veo-3.0-generate-preview',
+  'veo-2.0-generate-001',
+];
+
 /**
- * Generate a video using Google Veo 3.1
- * Returns the raw video bytes
+ * Generate a video using Google Veo (3.1 → 3.0 → 2.0 fallback)
+ * Returns raw video bytes as a Buffer
  */
 export async function generateVideo(options: VeoVideoOptions): Promise<VeoVideoResult> {
   const ai = getClient();
+  const aspectRatio = options.aspectRatio || '9:16';
+  const resolution = options.resolution || '720p';
+  // 1080p and 4k only support 8s duration
+  const durationSeconds = (resolution === '1080p' || resolution === '4k') ? 8 : (options.durationSeconds || 8);
 
   console.log('[Veo] Starting video generation:', {
     prompt: options.prompt.substring(0, 80) + '...',
-    aspectRatio: options.aspectRatio || '9:16',
-    resolution: options.resolution || '720p',
+    aspectRatio,
+    resolution,
+    durationSeconds,
   });
 
-  // Start the video generation operation
-  let operation: GenerateVideosOperation;
-  try {
-    operation = await ai.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: options.prompt,
-      config: {
-        aspectRatio: options.aspectRatio || '9:16', // default portrait for shorts
-        resolution: options.resolution || '720p',
-        durationSeconds: options.durationSeconds || 8,
-        generateAudio: options.generateAudio ?? true,
-        negativePrompt: options.negativePrompt,
-        numberOfVideos: 1,
-        personGeneration: 'allow_adult',
-      },
-    });
-  } catch (err: unknown) {
-    // Fallback to Veo 3.0 if 3.1 not available
-    console.log('[Veo] 3.1 failed, trying Veo 3.0...');
+  // Try each model in the fallback chain
+  let operation: Awaited<ReturnType<typeof ai.models.generateVideos>> | null = null;
+  let usedModel = '';
+
+  for (const model of VEO_MODELS) {
     try {
+      console.log(`[Veo] Trying model: ${model}`);
+
+      // Build config based on model version
+      const isVeo31 = model.includes('3.1');
+      const isVeo3 = model.includes('3.0') || isVeo31;
+
       operation = await ai.models.generateVideos({
-        model: 'veo-3.0-generate-preview',
+        model,
         prompt: options.prompt,
         config: {
-          aspectRatio: options.aspectRatio || '9:16',
+          aspectRatio,
+          // Resolution only supported in Veo 3.x+
+          ...(isVeo3 ? { resolution } : {}),
+          // Duration
+          ...(durationSeconds ? { durationSeconds } : {}),
           numberOfVideos: 1,
-          personGeneration: 'allow_adult',
-          generateAudio: options.generateAudio ?? true,
+          // Text-to-video: Veo 3.1 requires "allow_all", Veo 3 requires "allow_all"
+          // Veo 2 supports "allow_adult", "allow_all", "dont_allow"
+          personGeneration: (isVeo31 || isVeo3) ? 'allow_all' : 'allow_adult',
+          // Negative prompt
+          ...(options.negativePrompt ? { negativePrompt: options.negativePrompt } : {}),
         },
       });
-    } catch (err2: unknown) {
-      // Try Veo 2
-      console.log('[Veo] 3.0 failed, trying Veo 2.0...');
-      operation = await ai.models.generateVideos({
-        model: 'veo-2.0-generate-001',
-        prompt: options.prompt,
-        config: {
-          aspectRatio: options.aspectRatio || '9:16',
-          numberOfVideos: 1,
-          personGeneration: 'allow_adult',
-        },
-      });
+
+      usedModel = model;
+      console.log(`[Veo] Operation started with ${model}:`, operation.name, 'done:', operation.done);
+      break; // Success, exit fallback loop
+
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.log(`[Veo] ${model} failed: ${msg}`);
+      if (model === VEO_MODELS[VEO_MODELS.length - 1]) {
+        throw new Error(`All Veo models failed. Last error: ${msg}`);
+      }
+      // Continue to next model
     }
   }
 
-  console.log('[Veo] Operation started:', operation.name, 'done:', operation.done);
+  if (!operation) {
+    throw new Error('No Veo model was able to start generation');
+  }
 
-  // Poll until complete (video gen takes 1-3 minutes)
-  const maxWait = 300_000; // 5 minutes max
-  const pollInterval = 10_000; // 10 seconds
+  // Poll until complete (video gen takes ~11s to 6 minutes per docs)
+  const maxWait = 360_000; // 6 minutes max
+  const pollInterval = 10_000; // 10 seconds (matches docs examples)
   const startTime = Date.now();
 
   while (!operation.done) {
     if (Date.now() - startTime > maxWait) {
-      throw new Error('Video generation timed out after 5 minutes');
+      throw new Error('Video generation timed out after 6 minutes');
     }
 
-    console.log(`[Veo] Polling... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    console.log(`[Veo] Polling... (${elapsed}s elapsed)`);
     await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-    operation = await ai.operations.getVideosOperation({
-      operation: operation,
-    });
+    // Poll using the SDK's operation polling method
+    operation = await ai.operations.getVideosOperation({ operation });
   }
 
   if (operation.error) {
@@ -106,40 +119,42 @@ export async function generateVideo(options: VeoVideoOptions): Promise<VeoVideoR
 
   const response = operation.response;
   if (!response?.generatedVideos?.length) {
-    throw new Error('No videos were generated');
+    throw new Error('No videos were generated (may have been blocked by safety filters)');
   }
 
-  const video = response.generatedVideos[0];
-  
-  // Get video bytes - videoBytes is base64 encoded string
-  let videoData: Buffer;
-  if (video.video?.videoBytes) {
-    videoData = Buffer.from(video.video.videoBytes, 'base64');
-  } else if (video.video?.uri) {
-    // Download from URI using API key
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    const uri = video.video.uri.includes('?') 
-      ? `${video.video.uri}&key=${apiKey}` 
-      : `${video.video.uri}?key=${apiKey}`;
-    const resp = await fetch(uri);
-    if (!resp.ok) throw new Error(`Failed to download video: ${resp.status}`);
-    const arrayBuffer = await resp.arrayBuffer();
-    videoData = Buffer.from(arrayBuffer);
-  } else {
-    throw new Error('No video data in response');
+  const generatedVideo = response.generatedVideos[0];
+
+  // Download using the SDK's file download (saves to /tmp on Vercel)
+  const tmpPath = `/tmp/veo_${randomUUID()}.mp4`;
+
+  try {
+    console.log(`[Veo] Downloading video to ${tmpPath}...`);
+    await ai.files.download({
+      file: generatedVideo.video!,
+      downloadPath: tmpPath,
+    });
+
+    // Read the file into a Buffer
+    const videoData = readFileSync(tmpPath);
+    console.log(`[Veo] Video downloaded: ${videoData.length} bytes (model: ${usedModel})`);
+
+    return {
+      videoData,
+      mimeType: 'video/mp4',
+      durationSeconds,
+    };
+  } finally {
+    // Clean up temp file
+    try {
+      if (existsSync(tmpPath)) unlinkSync(tmpPath);
+    } catch {
+      // ignore cleanup errors
+    }
   }
-
-  console.log(`[Veo] Video generated successfully: ${videoData.length} bytes`);
-
-  return {
-    videoData,
-    mimeType: 'video/mp4',
-    durationSeconds: options.durationSeconds || 8,
-  };
 }
 
 /**
- * Generate an image using Gemini for use as video thumbnail
+ * Generate an image using Gemini for use as video thumbnail or reference
  */
 export async function generateThumbnail(prompt: string): Promise<{ imageData: Buffer; mimeType: string }> {
   const ai = getClient();
