@@ -12,6 +12,8 @@ import { sendNotification } from '@/lib/tools/notifications';
 import { makePhoneCall } from '@/lib/tools/phone-call';
 import { createAutonomousTask, checkTaskStatus } from '@/lib/tools/autonomous-task';
 import { postToReddit, postToTwitter, postToFacebook, postToLinkedIn } from '@/lib/social/post';
+import { sendEmail, isEmailConfigured } from '@/lib/email/send';
+import { createDocument } from '@/lib/documents/create';
 import type { VoiceName } from '@/lib/video/elevenlabs';
 import { db } from '@/db';
 import { userMemories } from '@/db/schema';
@@ -146,6 +148,89 @@ function getLocalTools(): ToolSet {
     makePhoneCall,
     createAutonomousTask,
     checkTaskStatus,
+
+    // ── Email Tools ───────────────────────────────────────────────────────
+    ...(isEmailConfigured() ? {
+      sendEmail: tool({
+        description: 'Send an email on behalf of the user. Can send plain text or HTML emails with optional CC/BCC. Use this when the user asks to email someone, send a message, follow up, or communicate via email.',
+        inputSchema: z.object({
+          to: z.string().describe('Recipient email address (or comma-separated for multiple)'),
+          subject: z.string().describe('Email subject line'),
+          body: z.string().describe('Email body content (can be plain text or HTML)'),
+          isHtml: z.boolean().optional().describe('Set true if body contains HTML formatting'),
+          cc: z.string().optional().describe('CC recipients (comma-separated)'),
+          bcc: z.string().optional().describe('BCC recipients (comma-separated)'),
+          replyTo: z.string().optional().describe('Reply-to email address'),
+        }),
+        execute: async ({ to, subject, body, isHtml, cc, bcc, replyTo }) => {
+          const result = await sendEmail({
+            to: to.includes(',') ? to.split(',').map(e => e.trim()) : to,
+            subject,
+            body,
+            isHtml,
+            cc: cc ? (cc.includes(',') ? cc.split(',').map(e => e.trim()) : cc) : undefined,
+            bcc: bcc ? (bcc.includes(',') ? bcc.split(',').map(e => e.trim()) : bcc) : undefined,
+            replyTo,
+          });
+          if (result.success) {
+            return { status: 'sent', message: `Email sent to ${to} — Subject: "${subject}"`, messageId: result.messageId };
+          }
+          return { status: 'error', message: result.error || 'Failed to send email' };
+        },
+      }),
+
+      composeDraftEmail: tool({
+        description: 'Compose an email draft and present it to the user for review before sending. Use this when the user wants help writing an email but may want to review/edit it first.',
+        inputSchema: z.object({
+          to: z.string().describe('Suggested recipient'),
+          subject: z.string().describe('Suggested subject line'),
+          body: z.string().describe('Suggested email body'),
+          context: z.string().optional().describe('Why this email is being composed'),
+        }),
+        execute: async ({ to, subject, body, context }) => {
+          return {
+            status: 'draft',
+            message: 'Email draft ready for review. Say "send it" to send, or suggest changes.',
+            draft: { to, subject, body },
+            context,
+          };
+        },
+      }),
+    } : {
+      sendEmail: tool({
+        description: 'Send an email — currently not configured. Tell the user they need to set up SMTP credentials.',
+        inputSchema: z.object({ to: z.string(), subject: z.string(), body: z.string() }),
+        execute: async () => ({
+          status: 'not_configured',
+          message: 'Email is not configured yet. The admin needs to add SMTP_USER and SMTP_PASS (Gmail App Password) to the environment variables. Get an App Password at https://myaccount.google.com/apppasswords',
+        }),
+      }),
+    }),
+
+    // ── Document Creation Tools ──────────────────────────────────────────
+    createDocument: tool({
+      description: 'Create a downloadable document/file. Supports PDF, CSV, HTML, Markdown, JSON, TXT, and TSV formats. Use for: reports, spreadsheets, proposals, meeting notes, data exports, contracts, invoices, content calendars, and any file the user needs.',
+      inputSchema: z.object({
+        format: z.enum(['pdf', 'csv', 'html', 'markdown', 'json', 'txt', 'tsv']).describe('Document format'),
+        title: z.string().describe('Document title'),
+        content: z.string().describe('Document content. For PDF: use markdown-style headings (# ## ###), bullet points (- ), and paragraphs. For CSV: use comma-separated rows with a header row. For HTML: provide full HTML body content. For JSON: provide valid JSON string.'),
+        fileName: z.string().optional().describe('Custom filename (auto-generated if omitted)'),
+      }),
+      execute: async ({ format, title, content, fileName }) => {
+        const result = await createDocument(format, title, content, fileName);
+        if (result.success) {
+          return {
+            status: 'created',
+            message: `Document created: ${result.fileName}`,
+            fileName: result.fileName,
+            mimeType: result.mimeType,
+            downloadUrl: `data:${result.mimeType};base64,${result.base64}`,
+            base64: result.base64,
+          };
+        }
+        return { status: 'error', message: result.error || 'Document creation failed' };
+      },
+    }),
 
     // Deep Research — delegates to Claude Haiku with web search
     // Only available when ANTHROPIC_API_KEY is set
