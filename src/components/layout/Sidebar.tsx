@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import {
@@ -8,6 +9,7 @@ import {
   FolderOpen, BookOpen, Zap, Settings, ChevronDown, Globe, Code,
   Search, Image, Monitor, Calendar, Users, Hash, BarChart3,
   Brain, Upload, FileText, Link2, X, ChevronUp, Bell, Phone, Rocket,
+  LogOut,
 } from 'lucide-react';
 
 import { NotificationInbox } from './NotificationInbox';
@@ -36,6 +38,7 @@ const AGENT_SKILLS = [
 ];
 
 export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
+  const { data: session } = useSession();
   const {
     sidebarOpen, toggleSidebar,
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -249,8 +252,8 @@ export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
               <Leaf className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-[#1a1a1a]">AutoPilot AI</h1>
-              <p className="text-[10px] text-[#8a8478]">by NumberOneSon</p>
+              <h1 className="text-sm font-bold text-[#1a1a1a]">Full Send AI</h1>
+              <p className="text-[10px] text-[#8a8478]">Autonomous Agents</p>
             </div>
           </div>
         )}
@@ -678,14 +681,33 @@ export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
       {/* Bottom */}
       <div className="p-3 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
         {isOpen ? (
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2 text-[#b5ae9e] text-[10px]">
-              <Leaf className="w-3 h-3" />
-              <span>16 tables · {AGENT_SKILLS.length} skills</span>
+          <div className="space-y-2">
+            {session?.user && (
+              <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {session.user.image ? (
+                    <img src={session.user.image} alt="" className="w-6 h-6 rounded-full" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-[#2d8a4e] flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                      {(session.user.name || session.user.email || '?')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-[11px] text-[#1a1a1a] font-medium truncate">{session.user.name || session.user.email}</span>
+                </div>
+                <button onClick={() => signOut({ redirectTo: '/login' })} className="p-1 rounded hover:bg-black/5 text-[#b5ae9e] hover:text-red-500 transition-colors" title="Sign out">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2 text-[#b5ae9e] text-[10px]">
+                <Leaf className="w-3 h-3" />
+                <span>{AGENT_SKILLS.length} skills</span>
+              </div>
+              <button onClick={() => setShowSettings(true)} className="p-1 rounded hover:bg-black/5 text-[#b5ae9e] hover:text-[#1a1a1a] transition-colors">
+                <Settings className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <button onClick={() => setShowSettings(true)} className="p-1 rounded hover:bg-black/5 text-[#b5ae9e] hover:text-[#1a1a1a] transition-colors">
-              <Settings className="w-3.5 h-3.5" />
-            </button>
           </div>
         ) : (
           <div className="flex justify-center">

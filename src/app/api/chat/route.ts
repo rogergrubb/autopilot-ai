@@ -15,9 +15,12 @@ import { postToReddit, postToTwitter, postToFacebook, postToLinkedIn } from '@/l
 import { sendEmail, isEmailConfigured } from '@/lib/email/send';
 import { createDocument } from '@/lib/documents/create';
 import type { VoiceName } from '@/lib/video/elevenlabs';
+import { auth } from '@/lib/auth';
 import { db } from '@/db';
 import { userMemories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+
+const DEFAULT_USER_ID = 'd30ca60b-0f38-498c-895d-30af8356af4a';
 
 // Vercel hobby = 60s, pro = 300s. Set high so multi-step agent doesn't get cut off.
 export const maxDuration = 300;
@@ -472,6 +475,10 @@ function getLocalTools(): ToolSet {
 }
 
 export async function POST(req: Request) {
+  // Get authenticated user ID (falls back to default for backwards compat)
+  const session = await auth();
+  const userId = session?.user?.id || DEFAULT_USER_ID;
+
   const { messages, agentRole = 'social_strategist', model: modelName } = await req.json();
 
   let systemPrompt = agentRole === 'social_strategist'
@@ -484,7 +491,7 @@ export async function POST(req: Request) {
       const memories = await db
         .select({ content: userMemories.content, category: userMemories.category })
         .from(userMemories)
-        .where(eq(userMemories.userId, 'd30ca60b-0f38-498c-895d-30af8356af4a'))
+        .where(eq(userMemories.userId, userId))
         .limit(100);
 
       if (memories.length > 0) {

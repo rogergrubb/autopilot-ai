@@ -68,7 +68,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       let content = '';
       try {
         const res = await fetch(body.url, {
-          headers: { 'User-Agent': 'AutoPilot-KB/1.0' },
+          headers: { 'User-Agent': 'FullSend-KB/1.0' },
           signal: AbortSignal.timeout(10000),
         });
         const html = await res.text();

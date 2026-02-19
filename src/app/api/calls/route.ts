@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     const baseUrl = process.env.NEXTAUTH_URL 
       || (process.env.VERCEL_PROJECT_PRODUCTION_URL 
           ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
-          : 'https://doanything-clone.vercel.app');
+          : 'https://fullsendai.vercel.app');
 
     const twimlUrl = `${baseUrl}/api/calls/twiml?callId=${callId}`;
 

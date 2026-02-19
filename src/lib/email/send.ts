@@ -6,12 +6,12 @@
  * - SMTP_PORT (default: 587)
  * - SMTP_USER (your Gmail address)
  * - SMTP_PASS (Gmail App Password — NOT your regular password)
- * - SMTP_FROM_NAME (display name, default: "AutoPilot AI")
+ * - SMTP_FROM_NAME (display name, default: "Full Send AI")
  * 
  * How to get a Gmail App Password:
  * 1. Go to https://myaccount.google.com/apppasswords
  * 2. Sign in with your Google account
- * 3. Select "Mail" and "Other" (name it "AutoPilot AI")
+ * 3. Select "Mail" and "Other" (name it "Full Send AI")
  * 4. Copy the 16-character password
  * 5. Use that as SMTP_PASS
  */
@@ -67,7 +67,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     }
 
     const transporter = getTransporter();
-    const fromName = process.env.SMTP_FROM_NAME || 'AutoPilot AI';
+    const fromName = process.env.SMTP_FROM_NAME || 'Full Send AI';
     const fromAddr = process.env.SMTP_USER;
 
     const info = await transporter.sendMail({
@@ -107,7 +107,7 @@ export async function sendHtmlEmail(
 ): Promise<EmailResult> {
   try {
     const transporter = getTransporter();
-    const fromName = process.env.SMTP_FROM_NAME || 'AutoPilot AI';
+    const fromName = process.env.SMTP_FROM_NAME || 'Full Send AI';
     const fromAddr = process.env.SMTP_USER;
 
     const info = await transporter.sendMail({

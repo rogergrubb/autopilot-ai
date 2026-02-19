@@ -5,7 +5,8 @@ import { signIn } from "next-auth/react";
 import { Rocket } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignUpPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,20 +17,33 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
       });
 
-      if (result?.error) {
-        setError("Invalid email or password");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create account");
         setLoading(false);
         return;
       }
 
-      window.location.href = "/";
+      // Auto sign in after registration
+      await signIn("credentials", {
+        email,
+        password,
+        redirectTo: "/",
+      });
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
@@ -46,7 +60,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-[#1a1a1a]">Full Send AI</h1>
           <p className="text-[#8a8478] text-sm mt-1">
-            Sign in to your agent workspace
+            Create your account
           </p>
         </div>
 
@@ -76,6 +90,18 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label className="text-sm text-[#8a8478] block mb-1.5">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              required
+              className="w-full bg-white border border-[#e5e0d8] rounded-lg px-3 py-2.5 text-[#1a1a1a] text-sm placeholder-[#b5ae9e] focus:outline-none focus:border-[#2d8a4e] transition-colors"
+            />
+          </div>
+
+          <div>
             <label className="text-sm text-[#8a8478] block mb-1.5">Email</label>
             <input
               type="email"
@@ -95,8 +121,9 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              placeholder="At least 6 characters"
               required
+              minLength={6}
               className="w-full bg-white border border-[#e5e0d8] rounded-lg px-3 py-2.5 text-[#1a1a1a] text-sm placeholder-[#b5ae9e] focus:outline-none focus:border-[#2d8a4e] transition-colors"
             />
           </div>
@@ -108,14 +135,14 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-[#2d8a4e] hover:bg-[#247a42] text-white font-medium py-2.5 rounded-lg text-sm transition-all disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
         <p className="text-center text-[#8a8478] text-xs mt-6">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-[#2d8a4e] hover:underline font-medium">
-            Sign up
+          Already have an account?{" "}
+          <Link href="/login" className="text-[#2d8a4e] hover:underline font-medium">
+            Sign in
           </Link>
         </p>
       </div>

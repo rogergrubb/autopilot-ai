@@ -53,7 +53,7 @@ export class MCPSessionManager {
         );
 
         this.client = new MCPClient(
-          { name: 'AutoPilot-Agent', version: '1.0.0' },
+          { name: 'FullSend-Agent', version: '1.0.0' },
           { capabilities: {} }
         );
 

@@ -384,7 +384,7 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
               <div className="mt-3 space-y-1.5">
                 <p className="text-[11px] text-[#8a8478] mb-2">
                   API keys are set as environment variables in Vercel. Go to{' '}
-                  <span className="font-medium text-[#1a1a1a]">Vercel → autopilot-ai → Settings → Environment Variables</span>
+                  <span className="font-medium text-[#1a1a1a]">Vercel → Full Send AI → Settings → Environment Variables</span>
                 </p>
                 {(data?.envVars || []).map((env) => {
                   const Icon = FEATURE_ICONS[env.label] || Key;
@@ -557,7 +557,7 @@ export function SettingsPanel({ onClose, onOpenImportMemories }: { onClose: () =
         {/* Footer */}
         <div className="px-6 py-3 border-t border-[#e5e0d8] flex items-center justify-between" style={{ backgroundColor: '#faf8f5' }}>
           <div className="text-[10px] text-[#b5ae9e]">
-            <span className="font-medium">AutoPilot AI</span> · 16 tables · {configuredCount} integrations active
+            <span className="font-medium">Full Send AI</span> · 16 tables · {configuredCount} integrations active
           </div>
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg text-xs font-medium text-[#8a8478] hover:bg-[#f0ece4] transition-colors">
             Close

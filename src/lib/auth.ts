@@ -1,8 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
@@ -10,23 +19,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Phase 1: Simple auth - accept any email with password "demo"
-        // Phase 2+: Replace with proper DB-backed auth
-        if (!credentials?.email) return null;
+        if (!credentials?.email || !credentials?.password) return null;
 
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        // Demo mode: any email with password "demo" works
-        if (password === "demo" || password === "password") {
-          return {
-            id: email,
-            email: email,
-            name: email.split("@")[0],
-          };
-        }
+        try {
+          if (!db) {
+            // Fallback: demo mode when DB is not connected
+            if (password === "demo" || password === "password") {
+              return { id: email, email, name: email.split("@")[0] };
+            }
+            return null;
+          }
 
-        return null;
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+
+          if (!user) return null;
+
+          // Check password hash stored in settings
+          const settings = (user.settings || {}) as Record<string, unknown>;
+          const passwordHash = settings.passwordHash as string | undefined;
+
+          if (!passwordHash) {
+            // Legacy demo user or OAuth-only user
+            if (password === "demo" || password === "password") {
+              return { id: user.id, email: user.email, name: user.name };
+            }
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(password, passwordHash);
+          if (!isValid) return null;
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          };
+        } catch (error) {
+          console.error("[Auth] Credentials error:", error);
+          // Fallback to demo mode on DB error
+          if (password === "demo" || password === "password") {
+            return { id: email, email, name: email.split("@")[0] };
+          }
+          return null;
+        }
       },
     }),
   ],
@@ -34,6 +77,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // For OAuth providers, upsert user in DB
+      if (account?.provider === "google" && user.email && db) {
+        try {
+          const [existing] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, user.email))
+            .limit(1);
+
+          if (!existing) {
+            await db.insert(users).values({
+              email: user.email,
+              name: user.name || user.email.split("@")[0],
+              image: user.image,
+            });
+          } else {
+            // Update name/image from Google profile
+            await db
+              .update(users)
+              .set({
+                name: user.name || existing.name,
+                image: user.image || existing.image,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.email, user.email));
+          }
+        } catch (error) {
+          console.error("[Auth] Google upsert error:", error);
+        }
+      }
+      return true;
+    },
     async session({ session, token }) {
       if (token?.sub) {
         session.user.id = token.sub;
@@ -51,3 +127,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
 });
+
+/** Helper to get the authenticated user ID, or throw if not authenticated */
+export async function getAuthUserId(): Promise<string> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+  return session.user.id;
+}
+
+/** Helper to get session or null */
+export async function getOptionalSession() {
+  try {
+    return await auth();
+  } catch {
+    return null;
+  }
+}
