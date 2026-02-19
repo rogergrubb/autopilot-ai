@@ -28,7 +28,7 @@
     "next": "16.1.6",
     "next-auth": "5.0.0-beta.30",
     "nodemailer": "^8.0.1",
-    "pdfkit": "^0.17.2",
+    "pdf-lib": "^1.17.1",
     "playwright-core": "^1.58.2",
     "postgres": "^3.4.8",
     "react": "19.2.3",
@@ -42,7 +42,6 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/pdfkit": "^0.17.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.9",
