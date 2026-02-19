@@ -20,6 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://analytics.numberoneson.us/t.js" data-site="fullsend" defer></script>
+      </head>
       <body className="bg-[#faf8f5] text-[#1a1a1a] antialiased font-sans">
         {children}
       </body>
