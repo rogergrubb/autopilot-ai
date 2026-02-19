@@ -82,9 +82,10 @@ export async function POST(req: Request) {
     });
 
     // Build TwiML URL — Twilio will fetch this when the call connects
-    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.NEXTAUTH_URL || 'https://fullsendai.vercel.app';
+    const baseUrl = process.env.NEXTAUTH_URL 
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL 
+          ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
+          : 'https://doanything-clone.vercel.app');
 
     const twimlUrl = `${baseUrl}/api/calls/twiml?callId=${callId}`;
 
