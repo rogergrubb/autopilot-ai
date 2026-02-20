@@ -95,7 +95,7 @@ export function ImportMemoriesModal({ onClose, onImported }: ImportMemoriesModal
           </div>
           <p className="text-sm text-[#8a8478] leading-relaxed">
             Your ChatGPT memories contain valuable context about your preferences,
-            work style, and interests. Importing them helps Do Anything work better
+            work style, and interests. Importing them helps Full Send AI work better
             for you from day one.
           </p>
         </div>

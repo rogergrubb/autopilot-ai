@@ -119,11 +119,11 @@ export function Sidebar({ forceMobileOpen }: { forceMobileOpen?: boolean }) {
     try {
       await fetch(`/api/chats/${id}`, { method: 'DELETE' });
       setChatHistory(chatHistory.filter(c => c.id !== id));
-      if (activeChatId === id) { setActiveChatId(null); window.location.href = '/'; }
+      if (activeChatId === id) { setActiveChatId(null); window.location.href = '/app'; }
     } catch {}
   };
 
-  const startNewChat = () => { setActiveChatId(null); closeMobile(); window.location.href = '/'; };
+  const startNewChat = () => { setActiveChatId(null); closeMobile(); window.location.href = '/app'; };
 
   const createProject = async () => {
     if (!newProjectTitle.trim()) return;

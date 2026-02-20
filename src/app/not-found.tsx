@@ -11,7 +11,7 @@ export default function NotFound() {
         The page you&apos;re looking for doesn&apos;t exist or has been moved.
       </p>
       <Link
-        href="/"
+        href="/app"
         className="px-6 py-2.5 rounded-lg bg-[#2d8a4e] text-white text-sm font-medium hover:bg-[#247a42] transition-colors"
       >
         Go Home

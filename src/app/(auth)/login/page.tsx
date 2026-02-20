@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Rocket } from "lucide-react";
 import Link from "next/link";
+import { toast } from "@/components/ui/Toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -25,13 +26,16 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError("Invalid email or password");
+        toast.error("Invalid email or password");
         setLoading(false);
         return;
       }
 
-      window.location.href = "/";
+      toast.success("Welcome back!");
+      window.location.href = "/app";
     } catch {
       setError("Something went wrong. Please try again.");
+      toast.error("Connection error. Please try again.");
       setLoading(false);
     }
   };
@@ -52,7 +56,7 @@ export default function LoginPage() {
 
         {/* Google OAuth */}
         <button
-          onClick={() => signIn("google", { redirectTo: "/" })}
+          onClick={() => signIn("google", { redirectTo: "/app" })}
           className="w-full flex items-center justify-center gap-2 bg-white border border-[#e5e0d8] hover:bg-[#f5f2ed] text-[#1a1a1a] font-medium py-2.5 rounded-lg text-sm transition-all mb-4"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">

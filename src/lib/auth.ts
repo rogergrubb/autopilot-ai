@@ -24,15 +24,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        try {
-          if (!db) {
-            // Fallback: demo mode when DB is not connected
-            if (password === "demo" || password === "password") {
-              return { id: email, email, name: email.split("@")[0] };
-            }
-            return null;
-          }
+        if (!db) {
+          console.error("[Auth] Database not connected");
+          return null;
+        }
 
+        try {
           const [user] = await db
             .select()
             .from(users)
@@ -41,15 +38,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (!user) return null;
 
-          // Check password hash stored in settings
           const settings = (user.settings || {}) as Record<string, unknown>;
           const passwordHash = settings.passwordHash as string | undefined;
 
           if (!passwordHash) {
-            // Legacy demo user or OAuth-only user
-            if (password === "demo" || password === "password") {
-              return { id: user.id, email: user.email, name: user.name };
-            }
+            // OAuth-only user, cannot log in with password
             return null;
           }
 
@@ -64,10 +57,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           };
         } catch (error) {
           console.error("[Auth] Credentials error:", error);
-          // Fallback to demo mode on DB error
-          if (password === "demo" || password === "password") {
-            return { id: email, email, name: email.split("@")[0] };
-          }
           return null;
         }
       },
@@ -78,7 +67,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      // For OAuth providers, upsert user in DB
       if (account?.provider === "google" && user.email && db) {
         try {
           const [existing] = await db
@@ -94,7 +82,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               image: user.image,
             });
           } else {
-            // Update name/image from Google profile
             await db
               .update(users)
               .set({

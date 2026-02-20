@@ -9,14 +9,25 @@ export default auth((req) => {
   const publicRoutes = ["/login", "/signup"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
+  // Landing page is public
+  const isLandingPage = pathname === "/";
+
   // Public API routes (webhooks, cron, auth)
   const publicApiRoutes = ["/api/auth", "/api/calls/twiml", "/api/cron"];
   const isPublicApi = publicApiRoutes.some((route) => pathname.startsWith(route));
 
+  // Landing page: logged-in users go to /app
+  if (isLandingPage) {
+    if (isLoggedIn) {
+      return NextResponse.redirect(new URL("/app", req.nextUrl));
+    }
+    return NextResponse.next();
+  }
+
   if (isPublicRoute || isPublicApi) {
     // Redirect logged-in users away from auth pages
     if (isLoggedIn && isPublicRoute) {
-      return NextResponse.redirect(new URL("/", req.nextUrl));
+      return NextResponse.redirect(new URL("/app", req.nextUrl));
     }
     return NextResponse.next();
   }
@@ -34,6 +45,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|og-image.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Rocket } from "lucide-react";
 import Link from "next/link";
+import { toast } from "@/components/ui/Toast";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
@@ -33,7 +34,9 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to create account");
+        const msg = data.error || "Failed to create account";
+        setError(msg);
+        toast.error(msg);
         setLoading(false);
         return;
       }
@@ -42,10 +45,11 @@ export default function SignUpPage() {
       await signIn("credentials", {
         email,
         password,
-        redirectTo: "/",
+        redirectTo: "/app",
       });
     } catch {
       setError("Something went wrong. Please try again.");
+      toast.error("Connection error. Please try again.");
       setLoading(false);
     }
   };
@@ -66,7 +70,7 @@ export default function SignUpPage() {
 
         {/* Google OAuth */}
         <button
-          onClick={() => signIn("google", { redirectTo: "/" })}
+          onClick={() => signIn("google", { redirectTo: "/app" })}
           className="w-full flex items-center justify-center gap-2 bg-white border border-[#e5e0d8] hover:bg-[#f5f2ed] text-[#1a1a1a] font-medium py-2.5 rounded-lg text-sm transition-all mb-4"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">

@@ -1,12 +1,9 @@
-# Agent Memory – DoAnything Clone
+# Agent Memory -- Full Send AI
 
 ## 1. Project Overview
-- Full-stack clone of doanything.com — autonomous AI agent platform
-- Primary user: Roger Grubb (NumberOneSonSoftware)
+- Full Send AI -- autonomous AI agent platform
 - Stack: Next.js 16.1.6, React 19, AI SDK v6 (ai@6.0.86), Gemini 2.5 Pro, Drizzle ORM, Zustand
-- Repo: github.com/rogergrubb/doanything-clone
-- Live: doanything-clone.vercel.app
-- Non-goals: Exact pixel replica; focus on functional parity of agent capabilities
+- Focus on functional parity of agent capabilities
 
 ## 2. Definition of Done (DoD)
 - 10 core tools: Email, Phone, Browser, Research, Code (Claude Code), Files, Websites, Images, Subagents, Slides

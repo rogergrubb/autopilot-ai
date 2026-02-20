@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   <Pause length="1"/>
   <Say voice="${voice}">${safeMessage}</Say>
   <Pause length="1"/>
-  <Say voice="${voice}">This message was sent by your AI assistant on Do Anything. Goodbye!</Say>
+  <Say voice="${voice}">This message was sent by your AI assistant on Full Send AI. Goodbye!</Say>
   <Hangup/>
 </Response>`;
 
